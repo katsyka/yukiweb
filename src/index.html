@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="theme.js"></script>
+<script src="i18n.js"></script>
+<link rel="stylesheet" href="ui.css">
+</head>
+<body>
+<div id="strip" data-tauri-drag-region>
+  <div class="logo" data-tauri-drag-region><svg viewBox="4 0 61 61"><path fill="#16181e" stroke="none" d="M12 47.5C8 43 6.5 37 7 31 8 17.5 19.5 8 34 8c13 0 22.5 7.5 25 18l1.6 10c1.8 2.6 2.4 5 2 8-.8 5.5-5 9-10.6 9H31c-7.5 0-14.5-1.5-19-5.5Z"/><path style="fill:var(--acc)" stroke="none" d="M34 28C22 29.2 13 35.5 9 44.4 15 39.1 23 34.5 34 33.2Z"/><rect style="fill:var(--acc)" stroke="none" x="28" y="20.5" width="34.5" height="13" rx="6.5"/><circle cx="36" cy="27" r="3.8" fill="none" stroke="#16181e" stroke-width="2.5"/><path d="m38.8 29.8 2.5 2.5" fill="none" stroke="#16181e" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+  <div id="tabs" data-nt></div>
+  <button id="add" title="New tab (Ctrl+T)"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  <div class="grow" data-tauri-drag-region></div>
+  <div class="wc">
+    <button id="min" title="Minimize"><svg viewBox="0 0 10 10"><path d="M0 5h10"/></svg></button>
+    <button id="max" title="Maximize"><svg viewBox="0 0 10 10"><rect x=".5" y=".5" width="9" height="9"/></svg></button>
+    <button id="cls" class="x" title="Close"><svg viewBox="0 0 10 10"><path d="M0 0l10 10M10 0L0 10"/></svg></button>
+  </div>
+</div>
+<div id="bar">
+  <button id="back" title="Back"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+  <button id="fwd" title="Forward"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  <button id="rel" title="Reload (Ctrl+R)"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></svg></button>
+  <div id="omni"><span id="pill" hidden></span><input id="q" spellcheck="false" autocomplete="off" placeholder="Search or type @ for Yuki apps"><button id="trb" title="Translate page" hidden></button><button id="rd" title="Reader mode" hidden></button><button id="ymb" title="Play in YukiMusic" hidden></button><button id="star" title="Bookmark this page (Ctrl+D)" hidden></button></div>
+  <div id="peekbar" hidden><span data-nt id="peekh"></span><button id="peeko">Open as tab</button><button id="peekx" title="Close (Esc)">✕</button></div>
+  <button id="addext" hidden>Add to YukiWeb</button>
+  <button id="ext" title="Extensions" hidden></button>
+  <button id="moo" title="Moo"></button>
+  <button id="vpn" title="VPN"><svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg><span>VPN</span><i></i></button>
+  <button id="dl" title="Downloads (Ctrl+J)" hidden></button>
+  <button id="upd" hidden>Restart to update</button>
+  <button id="np" title="Now playing" hidden></button>
+  <button id="acct" title="Sign in to Yuki ID"></button>
+  <button id="agb" title="Agents"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 7v4M12 11l-6 6M12 11l6 6"/></svg><span>Agents</span><i hidden></i></button>
+  <button id="chat" title="Yuki Chat"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg></button>
+  <button id="menu" title="Menu"></button>
+</div>
+<div id="bmbar" hidden><div id="bms" data-nt></div><button id="bmmore" title="All bookmarks"></button></div>
+<script src="icons.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>

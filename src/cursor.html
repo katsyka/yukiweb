@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>YukiWeb agent cursor</title>
+<style>
+html,body{margin:0;background:transparent;overflow:hidden;width:100vw;height:100vh}
+#c{position:fixed;left:0;top:0;display:none;align-items:flex-start;gap:2px;pointer-events:none;transition:transform .32s cubic-bezier(.2,.8,.2,1);will-change:transform}
+#c span{margin-top:15px;padding:3px 9px;border-radius:10px;font:600 12px Inter,'Segoe UI',system-ui,sans-serif;color:#fff;white-space:nowrap}
+.rip{position:fixed;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:2px solid;pointer-events:none;animation:r .5s ease-out forwards}
+@keyframes r{from{transform:scale(.3);opacity:1}to{transform:scale(1.4);opacity:0}}
+</style>
+</head>
+<body>
+<div id="c"><svg width="22" height="24" viewBox="0 0 20 22"><path id="p" d="M2 2 L2 18 L6.5 14 L9.5 20.5 L12.5 19 L9.5 12.8 L15.5 12.5 Z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg><span id="l"></span></div>
+<script>
+// Screen pixels from Rust → CSS pixels here.
+const c = document.getElementById('c'), l = document.getElementById('l'), p = document.getElementById('p');
+__TAURI__.event.listen('desk-cur', ({ payload: [show, x, y, name, color, label, click] }) => {
+  if (!show) { c.style.display = 'none'; return; }
+  const dx = x / devicePixelRatio, dy = y / devicePixelRatio;
+  c.style.display = 'flex';
+  c.style.transform = `translate(${dx - 2}px,${dy - 2}px)`;
+  p.setAttribute('fill', color);
+  l.style.background = color;
+  l.textContent = label ? `${name} · ${label}` : name;
+  if (click) {
+    const r = document.createElement('div');
+    r.className = 'rip'; r.style.left = dx + 'px'; r.style.top = dy + 'px'; r.style.borderColor = color;
+    document.body.append(r); setTimeout(() => r.remove(), 600);
+  }
+});
+</script>
+</body>
+</html>

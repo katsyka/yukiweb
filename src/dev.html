@@ -1,0 +1,1291 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Yuki DevTools</title>
+<script src="theme.js"></script>
+<script src="icons.js"></script>
+<!-- No i18n.js here: it would translate page text shown in the panel. -->
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;overflow:hidden;background:var(--surface);color:var(--text);font:12px "Segoe UI",system-ui,sans-serif;border-top:1px solid var(--line)}
+button,input,select,textarea{font:inherit;color:inherit}
+.mono,.tree,.log,#rin,.code{font:12px "Cascadia Mono",Consolas,monospace}
+#grip{position:fixed;top:0;left:0;right:0;height:5px;cursor:ns-resize;z-index:9}
+body.right,body.left{border-top:0}
+body.right{border-left:1px solid var(--line)}
+body.left{border-right:1px solid var(--line)}
+body.right #grip,body.left #grip{top:0;bottom:0;width:5px;height:auto;cursor:ew-resize}
+body.right #grip{left:0;right:auto}
+body.left #grip{right:0;left:auto}
+header nav{overflow-x:auto;scrollbar-width:none}
+header nav::-webkit-scrollbar{display:none}
+#menu{position:fixed;top:32px;right:6px;z-index:20;min-width:230px;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--surface);box-shadow:0 8px 28px #0004}
+#menu .mr{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px}
+#menu button.mr{width:100%;border:0;background:none;text-align:left;cursor:pointer}
+#menu button.mr:hover{background:var(--hover)}
+#menu .mr>span{flex:1;color:var(--text2)}
+#menu kbd{color:var(--dim2);font:11px "Segoe UI",system-ui,sans-serif}
+/* Narrow (docked to a side): side panes go under the main list. */
+@media (max-width:760px){
+  .split{flex-direction:column}
+  .split>.r{width:auto;min-width:0;max-width:none;height:48%;flex:none;border-left:0;border-top:1px solid var(--line)}
+  .nt .wide{display:none}
+  .nt colgroup{display:none}
+  .nt th:nth-child(1){width:46%}.nt th:nth-child(2){width:56px}.nt th:nth-child(5),.nt th:nth-child(6){width:64px}
+}
+header{display:flex;align-items:center;gap:2px;height:34px;padding:0 6px;border-bottom:1px solid var(--line);background:var(--chrome);flex:none}
+header nav{display:flex;height:100%}
+header nav button{position:relative;display:flex;align-items:center;gap:6px;height:100%;padding:0 11px;border:0;background:none;color:var(--dim);cursor:pointer}
+header nav button:hover{color:var(--text)}
+header nav button.on{color:var(--text);box-shadow:inset 0 -2px var(--acc)}
+.badge{min-width:16px;padding:0 4px;border-radius:8px;background:#e5484d;color:#fff;font-size:10px;line-height:16px;text-align:center}
+.badge:empty{display:none}
+.ib{display:grid;place-items:center;flex:none;width:28px;height:26px;border:0;border-radius:6px;background:none;color:var(--dim);cursor:pointer}
+.ib:hover{background:var(--hover);color:var(--text)}
+.ib.on{background:var(--acc-soft);color:var(--acc-text)}
+.ib .ic{width:15px;height:15px}
+.sp{flex:1}
+.tb{height:24px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer;white-space:nowrap}
+.tb:hover{background:var(--hover)}
+.tb.warn{color:#e5484d}
+.pill{padding:2px 8px;border-radius:10px;background:var(--acc-soft);color:var(--acc-text);font-size:11px}
+main{position:relative;flex:1;min-height:0}
+main>section{position:absolute;inset:0;display:flex;flex-direction:column}
+main>section[hidden]{display:none}
+.bar{display:flex;align-items:center;gap:6px;flex:none;min-height:30px;padding:3px 8px;border-bottom:1px solid var(--line2);flex-wrap:wrap}
+.bar input[type=search],.bar input.q{width:200px;height:22px;padding:0 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);outline:none}
+.bar input:focus{border-color:var(--acc)}
+.bar label{display:flex;align-items:center;gap:4px;color:var(--text2);white-space:nowrap;cursor:pointer}
+.bar select,.row select,.row input{height:22px;border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:0 4px}
+.chips{display:flex;gap:2px}
+.chips button{height:20px;padding:0 8px;border:0;border-radius:10px;background:none;color:var(--dim);cursor:pointer}
+.chips button:hover{background:var(--hover)}
+.chips button.on{background:var(--soft);color:var(--text)}
+.split{display:flex;flex:1;min-height:0}
+.split>.l{flex:1;min-width:0;overflow:auto}
+.split>.r{width:42%;min-width:260px;max-width:640px;overflow:auto;border-left:1px solid var(--line)}
+.r[hidden]{display:none}
+.empty{padding:20px;color:var(--dim)}
+/* Elements */
+.tree{padding:4px 0 30px;white-space:pre;cursor:default}
+.nd{padding-right:10px;line-height:18px}
+.nd:hover{background:var(--soft2)}
+.nd.sel{background:var(--acc-soft)}
+.nd.hid{opacity:.45}
+.tw{display:inline-block;width:12px;color:var(--dim2);font-style:normal;cursor:pointer;user-select:none}
+.tw.c::before{content:"▸"}.tw.o::before{content:"▾"}
+.tag{color:#a626a4}.an{color:#b76b01}.av{color:#2563eb}.tx{color:var(--text)}.cm{color:#8a8f9c}
+html.dark .tag{color:#d58cf0}html.dark .an{color:#f0b86a}html.dark .av{color:#8ab4ff}
+.crumbs{display:flex;gap:2px;overflow:auto;padding:4px 8px;border-top:1px solid var(--line2);white-space:nowrap;flex:none}
+.crumbs span{padding:1px 6px;border-radius:4px;cursor:pointer}
+.crumbs span:hover{background:var(--hover)}
+.side h4{margin:0;padding:8px 10px 4px;color:var(--dim);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.side .acts{display:flex;flex-wrap:wrap;gap:4px;padding:8px 10px;border-bottom:1px solid var(--line2)}
+.rule{margin:0 10px 8px;padding:6px 8px;border:1px solid var(--line2);border-radius:6px}
+.rule .sel{color:var(--text);font-weight:600}
+.rule .src{float:right;color:var(--dim2);font-size:11px}
+.rule .pr{padding-left:12px}
+.rule .pr.over{text-decoration:line-through;opacity:.5}
+.rule.ua{opacity:.7}
+.rule textarea{width:100%;min-height:80px;margin-top:4px;padding:4px;border:1px solid var(--acc);border-radius:4px;background:var(--surface);resize:vertical}
+.attrs .row{display:flex;gap:4px;padding:2px 10px}
+.attrs .row input{flex:1;min-width:0}
+.attrs .row input:first-child{flex:0 0 32%}
+.box{margin:8px auto 12px;width:max-content;text-align:center;font-size:11px}
+.box div{position:relative;padding:16px 22px;border:1px dashed var(--line3)}
+.box .m{background:#f9cc9d55}.box .b{background:#fddd9b66;border-style:solid}.box .p{background:#c3d08b66}.box .c{padding:6px 14px;background:#8cb6c066}
+.box i{position:absolute;top:2px;left:4px;color:var(--dim);font-style:normal;font-size:10px}
+.box s{position:absolute;text-decoration:none}
+.box s.t{top:2px;left:0;right:0}.box s.bo{bottom:2px;left:0;right:0}.box s.le{left:5px;top:50%;margin-top:-7px}.box s.ri{right:5px;top:50%;margin-top:-7px}
+.kv{display:grid;grid-template-columns:minmax(120px,38%) 1fr;gap:1px 10px;padding:2px 10px 8px;font:12px "Cascadia Mono",Consolas,monospace;word-break:break-all}
+.kv b{color:var(--text2);font-weight:500}
+.kv span{color:var(--text)}
+/* Console */
+.log{flex:1;overflow:auto}
+.msg{display:flex;gap:8px;padding:3px 10px 3px 12px;border-bottom:1px solid var(--line2);line-height:16px;white-space:pre-wrap;word-break:break-word}
+.msg .mb{flex:1;min-width:0}
+.msg .at{flex:none;max-width:40%;overflow:hidden;color:var(--dim2);text-overflow:ellipsis;white-space:nowrap}
+.msg.warn{background:#fff8e1;color:#7a5700;border-color:#f4e4b0}
+.msg.error{background:#fdecec;color:#b42318;border-color:#f6cfcf}
+html.dark .msg.warn{background:#33290f;color:#f5d27a;border-color:#4a3c16}
+html.dark .msg.error{background:#3a1717;color:#ff9b9b;border-color:#552222}
+.msg.debug{color:var(--dim)}
+.msg.in{color:var(--dim)}
+.msg.in::before{content:"›";color:var(--acc-text);font-weight:700}
+.msg.out::before{content:"‹";color:var(--dim2)}
+.msg.note{color:var(--dim);font-style:italic}
+.msg .n{flex:none;min-width:18px;padding:0 5px;border-radius:8px;background:var(--soft);text-align:center;font-size:10px}
+.s{color:#c41a16}.n{color:#1c00cf}.u{color:var(--dim2)}.f{color:#a626a4;font-style:italic}.k{color:#881280}
+html.dark .s{color:#f28b54}html.dark .n{color:#9980ff}html.dark .k{color:#d58cf0}
+.o>.tg{cursor:pointer;user-select:none}
+.o>.tg::before{content:"▸ ";color:var(--dim2)}
+.o.op>.tg::before{content:"▾ "}
+.o .ps{padding-left:14px}
+.o .ps>div{white-space:pre-wrap}
+.o .ps .pn{color:var(--k,#881280)}
+.o .ps .pn.ne{opacity:.6}
+.getter{color:var(--dim);cursor:pointer;text-decoration:underline dotted}
+table.ct{margin:4px 0;border-collapse:collapse}
+table.ct td,table.ct th{padding:1px 8px;border:1px solid var(--line);text-align:left}
+#rbox{position:relative;flex:none;border-top:1px solid var(--line);background:var(--surface)}
+#rin{display:block;width:100%;min-height:30px;max-height:160px;padding:7px 10px 7px 24px;border:0;background:none;outline:none;resize:none}
+#rbox::before{content:"›";position:absolute;left:10px;top:6px;color:var(--acc-text);font-weight:700;font-size:14px}
+#eager{padding:0 10px 6px 24px;color:var(--dim2);font:12px "Cascadia Mono",Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#eager:empty{display:none}
+#ac{position:absolute;bottom:100%;left:24px;min-width:200px;max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface);box-shadow:0 6px 20px #0003;font:12px "Cascadia Mono",Consolas,monospace}
+#ac div{padding:3px 10px;cursor:pointer}
+#ac div.on{background:var(--acc-soft)}
+#ac b{color:var(--acc-text)}
+/* Network */
+table.nt{width:100%;border-collapse:collapse;table-layout:fixed}
+.nt th{position:sticky;top:0;z-index:1;height:24px;padding:0 6px;border-bottom:1px solid var(--line);background:var(--chrome);color:var(--dim);font-weight:500;text-align:left;cursor:pointer;user-select:none}
+.nt td{height:21px;padding:0 6px;overflow:hidden;border-bottom:1px solid var(--line2);text-overflow:ellipsis;white-space:nowrap}
+.nt tr:hover td{background:var(--soft2)}
+.nt tr.sel td{background:var(--acc-soft)}
+.nt tr.bad td{color:#e5484d}
+.nt tr.ad td{color:var(--dim2)}
+.nt td small{color:var(--dim2)}
+.wf{position:relative;height:8px}
+.wf i{position:absolute;top:0;height:8px;min-width:2px;border-radius:2px;background:#3ec7e0}
+.wf i.d{background:#7aa2ff}.wf i.c{background:#b18cff}.wf i.j{background:#ffb020}.wf i.m{background:#7bd389}
+.foot{flex:none;padding:4px 10px;border-top:1px solid var(--line2);color:var(--dim)}
+.dt .tabs{display:flex;gap:2px;padding:6px 8px;border-bottom:1px solid var(--line2);position:sticky;top:0;background:var(--surface)}
+.dt pre,.code{margin:0;padding:8px 10px;white-space:pre-wrap;word-break:break-all}
+.dt img{max-width:100%;margin:10px;background:repeating-conic-gradient(#ddd 0 25%,#fff 0 50%) 0 0/16px 16px}
+.tim{padding:8px 10px}
+.tim .r{display:grid;grid-template-columns:150px 1fr 70px;gap:8px;align-items:center;margin:2px 0}
+.tim .r i{display:block;height:8px;border-radius:2px;background:#3ec7e0}
+/* Storage / tables */
+.grid{width:100%;border-collapse:collapse;table-layout:fixed}
+.grid th{height:24px;padding:0 8px;border-bottom:1px solid var(--line);background:var(--chrome);color:var(--dim);font-weight:500;text-align:left}
+.grid td{padding:3px 8px;border-bottom:1px solid var(--line2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:12px "Cascadia Mono",Consolas,monospace;vertical-align:top}
+.grid td.v{cursor:text}
+.grid td textarea{width:100%;min-height:60px;border:1px solid var(--acc);border-radius:4px;background:var(--surface);font:inherit}
+.grid td .x{border:0;background:none;color:var(--dim);cursor:pointer}
+.grid td .x:hover{color:#e5484d}
+.gh{display:flex;align-items:center;gap:8px;padding:10px 10px 6px;font-weight:600}
+.gh small{color:var(--dim);font-weight:400}
+.scroll{flex:1;overflow:auto}
+/* Performance & Emulation */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:10px}
+.tile{padding:8px 10px;border:1px solid var(--line2);border-radius:8px}
+.tile small{display:block;color:var(--dim)}
+.tile b{display:block;margin-top:2px;font-size:17px;font-weight:600}
+.tile.good b{color:#16a34a}.tile.mid b{color:#d97706}.tile.bad b{color:#e5484d}
+.tile em{color:var(--dim2);font-size:11px;font-style:normal}
+canvas{display:block}
+.form{padding:6px 10px 20px;columns:2 360px;column-gap:24px}
+.form .row{display:flex;align-items:center;gap:8px;min-height:30px;break-inside:avoid}
+.form .row>span{flex:0 0 150px;color:var(--text2)}
+.form h4{margin:12px 0 4px;color:var(--dim);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;break-after:avoid}
+.form input[type=number]{width:70px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{border:2px solid var(--surface);border-radius:6px;background:var(--line3)}
+</style>
+</head>
+<body>
+<div id="grip" title="Drag to resize"></div>
+<header>
+  <button class="ib" id="pick" title="Select an element in the page (Ctrl+Shift+C)"></button>
+  <nav id="panes">
+    <button data-p="el">Elements</button>
+    <button data-p="con">Console<span class="badge" id="errn"></span></button>
+    <button data-p="net">Network</button>
+    <button data-p="sto">Storage</button>
+    <button data-p="perf">Performance</button>
+    <button data-p="emu">Emulation</button>
+  </nav>
+  <span class="sp"></span>
+  <span class="pill" id="emuon" hidden>Emulating</span>
+  <button class="ib" id="reload" title="Reload page (Shift+click: empty cache and hard reload)"></button>
+  <button class="ib" id="more" title="Dock side and more"></button>
+  <button class="ib" id="close" title="Close (F12)"></button>
+  <div id="menu" hidden>
+    <div class="mr"><span>Dock side</span><button class="ib" data-dock="left" title="Dock to left"></button><button class="ib" data-dock="bottom" title="Dock to bottom"></button><button class="ib" data-dock="right" title="Dock to right"></button></div>
+    <button class="mr" id="native"><span>Open Chromium DevTools</span></button>
+    <div class="mr"><span>Switch dock side</span><kbd>Ctrl+Shift+D</kbd></div>
+  </div>
+</header>
+<main>
+  <section id="p-el" hidden>
+    <div class="bar"><input class="q" id="elq" type="search" placeholder="Find by text, selector or XPath" spellcheck="false"><span id="elqn" style="color:var(--dim)"></span><span class="sp"></span><button class="tb" id="elrf">Refresh</button></div>
+    <div class="split">
+      <div class="l" tabindex="0" id="tree-wrap"><div class="tree" id="tree"></div></div>
+      <div class="r side" id="elside"></div>
+    </div>
+    <div class="crumbs mono" id="crumbs"></div>
+  </section>
+  <section id="p-con" hidden>
+    <div class="bar">
+      <button class="ib" id="cclr" title="Clear console (Ctrl+L)"></button>
+      <input class="q" id="cq" type="search" placeholder="Filter" spellcheck="false">
+      <div class="chips" id="clv"><button data-l="" class="on">All</button><button data-l="error">Errors</button><button data-l="warn">Warnings</button><button data-l="info">Info</button><button data-l="debug">Verbose</button></div>
+      <span class="sp"></span>
+      <label><input type="checkbox" id="cpres"> Preserve log</label>
+    </div>
+    <div class="log" id="log"></div>
+    <div id="rbox"><div id="ac" hidden></div><textarea id="rin" rows="1" spellcheck="false" placeholder="Run JavaScript in the page ($0 = selected element, top-level await works)"></textarea><div id="eager"></div></div>
+  </section>
+  <section id="p-net" hidden>
+    <div class="bar">
+      <button class="ib" id="nclr" title="Clear"></button>
+      <input class="q" id="nq" type="search" placeholder="Filter (text, -exclude, status:404, domain:x)" spellcheck="false">
+      <div class="chips" id="nty"><button data-t="" class="on">All</button><button data-t="fetch">Fetch/XHR</button><button data-t="doc">Doc</button><button data-t="css">CSS</button><button data-t="js">JS</button><button data-t="font">Font</button><button data-t="img">Img</button><button data-t="media">Media</button><button data-t="ws">WS</button><button data-t="other">Other</button><button data-t="ad">Blocked ads</button></div>
+      <span class="sp"></span>
+      <label><input type="checkbox" id="npres"> Preserve log</label>
+      <label><input type="checkbox" id="ncache"> Disable cache</label>
+      <select id="nthr" title="Network speed"><option value="">No throttling</option><option value="4g">Fast 4G</option><option value="s4g">Slow 4G</option><option value="3g">3G</option><option value="off">Offline</option></select>
+    </div>
+    <div class="split">
+      <div class="l"><table class="nt"><colgroup><col style="width:34%"><col style="width:62px"><col style="width:9%"><col class="wide" style="width:9%"><col style="width:70px"><col style="width:70px"><col class="wide"></colgroup>
+        <thead><tr><th data-k="name">Name</th><th data-k="status">Status</th><th data-k="type">Type</th><th data-k="init" class="wide">Initiator</th><th data-k="size">Size</th><th data-k="time">Time</th><th data-k="start" class="wide">Waterfall</th></tr></thead><tbody id="nrows"></tbody></table>
+        <div class="empty" id="nempty">Recording network activity… Reload the page to see everything it loads.</div></div>
+      <div class="r dt" id="ndet" hidden></div>
+    </div>
+    <div class="foot" id="nfoot"></div>
+  </section>
+  <section id="p-sto" hidden>
+    <div class="bar"><input class="q" id="sq" type="search" placeholder="Filter keys and values" spellcheck="false"><span id="sorigin" class="mono" style="color:var(--dim)"></span><span class="sp"></span><button class="tb" id="srf">Refresh</button><button class="tb warn" id="sclear">Clear site data</button></div>
+    <div class="scroll" id="sto"></div>
+  </section>
+  <section id="p-perf" hidden>
+    <div class="scroll">
+      <div class="gh">Page load<small id="vnote">Core Web Vitals for this page view</small></div>
+      <div class="tiles" id="vitals"></div>
+      <div class="gh">Live<small>Updates every second while this tab is open</small></div>
+      <div class="tiles" id="metrics"></div>
+      <div style="padding:0 10px"><canvas id="heap" height="60"></canvas></div>
+      <div class="form">
+        <h4>Rendering</h4>
+        <label class="row"><span>FPS meter</span><input type="checkbox" data-ov="setShowFPSCounter"></label>
+        <label class="row"><span>Paint flashing</span><input type="checkbox" data-ov="setShowPaintRects"></label>
+        <label class="row"><span>Layout shift regions</span><input type="checkbox" data-ov="setShowLayoutShiftRegions"></label>
+        <label class="row"><span>Layer borders</span><input type="checkbox" data-ov="setShowDebugBorders"></label>
+        <label class="row"><span>Scroll performance issues</span><input type="checkbox" data-ov="setShowScrollBottleneckRects"></label>
+        <h4>CPU</h4>
+        <label class="row"><span>CPU throttling</span><select id="cpu"><option value="1">None</option><option value="4">4× slower</option><option value="6">6× slower</option><option value="20">20× slower</option></select></label>
+      </div>
+    </div>
+  </section>
+  <section id="p-emu" hidden>
+    <div class="bar"><b>Emulation</b><span style="color:var(--dim)">Applies to this tab until you reset it or close it</span><span class="sp"></span><button class="tb" id="ereset">Reset all</button></div>
+    <div class="scroll"><div class="form" id="emu">
+      <h4>Device</h4>
+      <label class="row"><span>Device</span><select data-e="dev"></select></label>
+      <label class="row"><span>Size</span><input type="number" data-e="w" min="100" max="4000"> × <input type="number" data-e="h" min="100" max="4000"></label>
+      <label class="row"><span>Pixel ratio</span><input type="number" data-e="dpr" min="1" max="4" step="0.25"></label>
+      <label class="row"><span>Landscape</span><input type="checkbox" data-e="rot"></label>
+      <label class="row"><span>Touch</span><input type="checkbox" data-e="touch"></label>
+      <label class="row"><span>User agent</span><select data-e="ua"><option value="">Default</option><option value="auto">Match device</option><option value="iphone">iPhone Safari</option><option value="android">Android Chrome</option><option value="mac">Mac Safari</option><option value="bot">Googlebot</option></select></label>
+      <h4>Media</h4>
+      <label class="row"><span>Color scheme</span><select data-e="scheme"><option value="">Page default</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+      <label class="row"><span>Reduced motion</span><select data-e="motion"><option value="">Page default</option><option value="reduce">Reduce</option><option value="no-preference">No preference</option></select></label>
+      <label class="row"><span>Contrast</span><select data-e="contrast"><option value="">Page default</option><option value="more">More</option><option value="less">Less</option></select></label>
+      <label class="row"><span>Forced colors</span><select data-e="forced"><option value="">Page default</option><option value="active">Active</option></select></label>
+      <label class="row"><span>Media type</span><select data-e="media"><option value="">Screen</option><option value="print">Print</option></select></label>
+      <label class="row"><span>Vision</span><select data-e="vision"><option value="">Normal</option><option value="blurredVision">Blurred</option><option value="reducedContrast">Low contrast</option><option value="protanopia">Protanopia (no red)</option><option value="deuteranopia">Deuteranopia (no green)</option><option value="tritanopia">Tritanopia (no blue)</option><option value="achromatopsia">No color</option></select></label>
+      <h4>Environment</h4>
+      <label class="row"><span>JavaScript</span><select data-e="nojs"><option value="">On</option><option value="1">Off</option></select></label>
+      <label class="row"><span>Location</span><select data-e="geo"><option value="">Real</option><option value="51.5072,-0.1276">London</option><option value="40.7128,-74.006">New York</option><option value="55.7558,37.6173">Moscow</option><option value="52.52,13.405">Berlin</option><option value="35.6762,139.6503">Tokyo</option><option value="-33.8688,151.2093">Sydney</option></select></label>
+      <label class="row"><span>Time zone</span><select data-e="tz"><option value="">System</option><option>UTC</option><option>Europe/London</option><option>Europe/Berlin</option><option>Europe/Moscow</option><option>America/New_York</option><option>America/Los_Angeles</option><option>Asia/Tokyo</option><option>Australia/Sydney</option></select></label>
+      <label class="row"><span>Language</span><select data-e="locale"><option value="">System</option><option>en-US</option><option>en-GB</option><option>ru-RU</option><option>de-DE</option><option>fr-FR</option><option>ja-JP</option><option>ar-SA</option></select></label>
+    </div></div>
+  </section>
+</main>
+<script>
+const { invoke } = __TAURI__.core;
+const { listen } = __TAURI__.event;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+const store = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } };
+const keep = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch {} };
+ICONS.pick = '<path d="M12.034 12.681a.498.498 0 0 1 .647-.647l9 3.5a.5.5 0 0 1-.033.943l-3.444 1.068a1 1 0 0 0-.66.66l-1.067 3.443a.5.5 0 0 1-.943.033z"/><path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>';
+ICONS.ban = '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>';
+ICONS.pl = '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>';
+ICONS.pb = '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 15h18"/>';
+ICONS.pr = '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M15 3v18"/>';
+$('more').innerHTML = icon('dots');
+for (const b of document.querySelectorAll('[data-dock]')) b.innerHTML = icon({ left: 'pl', bottom: 'pb', right: 'pr' }[b.dataset.dock]);
+$('pick').innerHTML = icon('pick'); $('close').innerHTML = icon('x'); $('reload').innerHTML = icon('reload');
+$('cclr').innerHTML = icon('ban'); $('nclr').innerHTML = icon('ban');
+
+let tab = 0;
+const S = {};
+const fresh = () => ({ logs: [], depth: 0, errs: 0, reqs: new Map(), dom: null, emu: {}, sel: null, frame: null, heap: [] });
+const st = () => S[tab] ||= fresh();
+const cdp = (method, params = {}, id = tab) => invoke('dev_cdp', { id, method, params: JSON.stringify(params) });
+const evalv = expr => cdp('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true }).then(r => r.result?.value);
+const copy = t => navigator.clipboard.writeText(t).catch(() => {});
+const fmtB = n => n == null ? '' : n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' kB' : (n / 1048576).toFixed(1) + ' MB';
+const fmtMs = ms => ms == null || isNaN(ms) ? '' : ms < 1000 ? Math.round(ms) + ' ms' : (ms / 1000).toFixed(2) + ' s';
+const later = (f, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => f(...a), ms); }; };
+const frameSched = f => { let q = false; return () => { if (q) return; q = true; requestAnimationFrame(() => { q = false; f(); }); }; };
+
+// ---------- shell: panes, resize, keys ----------
+let pane = store('yw-dev-pane', 'con');
+function show(p) {
+  pane = p; keep('yw-dev-pane', p);
+  for (const b of $('panes').children) b.classList.toggle('on', b.dataset.p === p);
+  for (const s of document.querySelectorAll('main>section')) s.hidden = s.id !== 'p-' + p;
+  if (p === 'el') { if (!st().dom) loadDoc(); else renderTree(); }
+  if (p === 'con') { renderCon(); $('rin').focus(); }
+  if (p === 'net') renderNet();
+  if (p === 'sto') stoLoad();
+  if (p === 'perf') perfTick(true);
+  if (p === 'emu') emuForm();
+}
+$('panes').onclick = e => { const b = e.target.closest('button'); if (b) show(b.dataset.p); };
+$('close').onclick = () => invoke('dev_open', { open: false });
+$('native').onclick = () => { $('menu').hidden = true; invoke('dev_native', { id: tab }); };
+// Docking (dev.rs keeps the side and sizes in devtools.json).
+let dock = 'right', lastSide = 'right';
+function setDock(d) {
+  dock = d; if (d !== 'bottom') lastSide = d;
+  document.body.className = d === 'bottom' ? '' : d;
+  for (const b of document.querySelectorAll('[data-dock]')) b.classList.toggle('on', b.dataset.dock === d);
+}
+listen('dev-dock', ({ payload }) => setDock(payload));
+const dockTo = d => invoke('dev_dock', { side: d }).then(setDock);
+$('more').onclick = e => { e.stopPropagation(); $('menu').hidden = !$('menu').hidden; };
+$('menu').onclick = e => { const b = e.target.closest('[data-dock]'); if (b) { dockTo(b.dataset.dock); $('menu').hidden = true; } e.stopPropagation(); };
+addEventListener('click', () => { $('menu').hidden = true; });
+$('reload').onclick = async e => {
+  if (e.shiftKey) await cdp('Network.clearBrowserCache').catch(() => {});
+  cdp('Page.reload', { ignoreCache: e.shiftKey });
+};
+{
+  // Screen coordinates: the panel itself moves while you drag.
+  let p0 = 0, s0 = 0, want = 0;
+  const push = frameSched(() => invoke('dev_resize', { size: want }));
+  const at = e => dock === 'bottom' ? e.screenY : e.screenX;
+  $('grip').onpointerdown = e => { p0 = at(e); s0 = dock === 'bottom' ? innerHeight : innerWidth; want = s0; $('grip').setPointerCapture(e.pointerId); };
+  $('grip').onpointermove = e => {
+    if (!$('grip').hasPointerCapture(e.pointerId)) return;
+    const d = at(e) - p0;
+    want = dock === 'left' ? s0 + d : s0 - d; push();
+  };
+  $('grip').onpointerup = () => invoke('dev_resize', { size: want, done: true });
+}
+addEventListener('keydown', e => {
+  if (e.key === 'F12') { e.preventDefault(); invoke('dev_open', { open: false }); }
+  else if (e.ctrlKey && e.shiftKey && e.code === 'KeyC') { e.preventDefault(); pick(true); }
+  else if (e.ctrlKey && e.shiftKey && e.code === 'KeyI') { e.preventDefault(); invoke('dev_open', { open: false }); }
+  else if (e.ctrlKey && e.shiftKey && e.code === 'KeyD') { e.preventDefault(); dockTo(dock === 'bottom' ? lastSide : 'bottom'); }
+  else if (e.ctrlKey && e.shiftKey && e.code === 'KeyJ') { e.preventDefault(); show('con'); }
+  else if (e.ctrlKey && e.code === 'KeyL' && pane === 'con') { e.preventDefault(); conClear(); }
+  else if (e.ctrlKey && e.code === 'KeyF') { e.preventDefault(); ({ el: $('elq'), con: $('cq'), net: $('nq'), sto: $('sq') })[pane]?.focus(); }
+  else if (e.key === 'F5' || (e.ctrlKey && e.code === 'KeyR')) { e.preventDefault(); cdp('Page.reload', { ignoreCache: e.shiftKey || e.ctrlKey && e.shiftKey }); }
+});
+
+const H = {};
+listen('cdp', ({ payload: [id, ev, json] }) => {
+  let p; try { p = JSON.parse(json); } catch { return; }
+  try { H[ev]?.(p, S[id] ||= fresh(), id === tab); } catch (err) { console.error(ev, err); }
+});
+async function setTab(id) {
+  if (!id || id === tab) return;
+  tab = id;
+  const s = st();
+  cdp('Page.getFrameTree').then(r => { s.frame = r.frameTree.frame.id; }).catch(() => {});
+  badge();
+  $('emuon').hidden = !emuActive(s.emu);
+  show(pane);
+}
+listen('dev-tab', ({ payload }) => { if (payload !== tab) { picking = false; $('pick').classList.remove('on'); hoverN = 0; } setTab(payload); });
+listen('dev-closed', () => { picking = false; $('pick').classList.remove('on'); hoverN = 0; });
+function go(what) {
+  if (what === 'pick') pick(true);
+  else if (what === 'inspect') inspectCtx();
+  else if (what) show(what);
+}
+listen('dev-go', ({ payload }) => go(payload));
+// Right-click > Inspect: tab.js remembers what was right-clicked; inside a frame it can't reach, fall back to the picker.
+async function inspectCtx() {
+  const r = await cdp('Runtime.evaluate', { expression: 'window.__ywCtx' }).catch(() => null);
+  if (r?.result?.subtype === 'node') revealObject(r.result.objectId); else pick(true);
+}
+
+// ---------- Console ----------
+const badge = () => { $('errn').textContent = st().errs || ''; };
+const CSS_OK = /^(color|background(-color)?|font-(weight|style|size|family)|text-(decoration|shadow|transform)|padding|margin|border(-radius)?|line-height)$/;
+const safeCss = s => s.split(';').map(x => x.split(':')).filter(([k, v]) => v && CSS_OK.test(k.trim()) && !/url\(|expression/i.test(v)).map(([k, ...v]) => k.trim() + ':' + v.join(':')).join(';');
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const shortUrl = u => { try { const x = new URL(u); return (x.pathname.split('/').filter(Boolean).pop() || x.host) + (x.search ? '?' : ''); } catch { return u || ''; } };
+const atOf = t => { const f = t?.callFrames?.[0]; return f && f.url ? { url: f.url, line: f.lineNumber } : null; };
+
+function addLog(s, e, cur) {
+  e.depth = s.depth;
+  const last = s.logs[s.logs.length - 1];
+  const sig = e.args ? e.level + JSON.stringify(e.args.map(a => a.value ?? a.description)) + (e.at?.url || '') + (e.at?.line || '') : null;
+  if (sig && last && last.sig === sig) { last.n = (last.n || 1) + 1; if (cur && pane === 'con') renderCon(); return; }
+  e.sig = sig;
+  s.logs.push(e);
+  if (s.logs.length > 3000) s.logs.splice(0, 500);
+  if (e.level === 'error') s.errs++;
+  if (cur) { badge(); if (pane === 'con') appendLog(e); }
+}
+H['Runtime.consoleAPICalled'] = (p, s, cur) => {
+  if (p.type === 'clear') { s.logs = []; s.errs = 0; s.depth = 0; if (cur) { badge(); renderCon(); } return addLog(s, { level: 'log', note: 'Console was cleared' }, cur); }
+  if (p.type === 'endGroup') { s.depth = Math.max(0, s.depth - 1); return; }
+  const level = { error: 'error', assert: 'error', warning: 'warn', debug: 'debug', info: 'info' }[p.type] || 'log';
+  addLog(s, { level, type: p.type, args: p.args || [], at: atOf(p.stackTrace), stack: ['trace', 'error', 'assert'].includes(p.type) ? p.stackTrace : null }, cur);
+  if (p.type === 'startGroup' || p.type === 'startGroupCollapsed') s.depth++;
+};
+H['Runtime.exceptionThrown'] = (p, s, cur) => addLog(s, { level: 'error', exc: p.exceptionDetails, at: p.exceptionDetails.url ? { url: p.exceptionDetails.url, line: p.exceptionDetails.lineNumber } : atOf(p.exceptionDetails.stackTrace) }, cur);
+H['Log.entryAdded'] = ({ entry: e }, s, cur) => addLog(s, { level: e.level === 'warning' ? 'warn' : e.level === 'verbose' ? 'debug' : e.level, text: e.text, at: e.url ? { url: e.url, line: e.lineNumber || 0 } : null }, cur);
+
+function prim(o) {
+  switch (o.type) {
+    case 'string': return ['s', JSON.stringify(o.value)];
+    case 'number': case 'bigint': return ['n', o.unserializableValue || o.description || String(o.value)];
+    case 'boolean': return ['n', String(o.value)];
+    case 'undefined': return ['u', 'undefined'];
+    case 'symbol': return ['s', o.description];
+  }
+  if (o.subtype === 'null') return ['u', 'null'];
+  return null;
+}
+const fnHead = d => 'ƒ ' + (d || '').split('\n')[0].replace(/^(async\s+)?function\s*/, '$1').replace(/\{\s*$/, '').slice(0, 120);
+function pvText(x) {
+  if (x.type === 'string') return JSON.stringify(x.value);
+  if (x.type === 'function') return 'ƒ';
+  if (x.type === 'object' && x.subtype === 'null') return 'null';
+  if (x.valuePreview) return x.valuePreview.subtype === 'array' ? x.value || '[…]' : '{…}';
+  return x.value ?? '';
+}
+function summary(o) {
+  if (o.type === 'function') return fnHead(o.description);
+  if (o.subtype === 'node' || o.subtype === 'error' || o.subtype === 'regexp' || o.subtype === 'date') return o.description;
+  const p = o.preview;
+  if (!p) return o.description || o.className || 'Object';
+  const arr = p.subtype === 'array' || p.subtype === 'typedarray';
+  const items = (p.properties || []).map(x => (arr && /^\d+$/.test(x.name) ? '' : x.name + ': ') + pvText(x));
+  if (p.entries) items.unshift(...p.entries.map(en => (en.key ? (en.key.description ?? '') + ' => ' : '') + (en.value.description ?? '')));
+  const body = items.join(', ') + (p.overflow ? ', …' : '');
+  if (arr) return `${o.description} [${body}]`;
+  if (p.entries) return `${o.description} {${body}}`;
+  return `${o.className && o.className !== 'Object' ? o.className + ' ' : ''}{${body}}`;
+}
+function objEl(o, top) {
+  const pr = prim(o);
+  if (pr && !o.objectId) return el('span', pr[0], top && o.type === 'string' ? o.value : pr[1]);
+  const w = el('span', 'o');
+  const tg = el('span', 'tg ' + (o.type === 'function' ? 'f' : o.subtype === 'error' ? '' : ''), summary(o));
+  w.append(tg);
+  if (o.subtype === 'node') {
+    tg.onmouseenter = () => o.objectId && cdp('Overlay.highlightNode', { highlightConfig: HL, objectId: o.objectId }).catch(() => {});
+    tg.onmouseleave = () => cdp('Overlay.hideHighlight').catch(() => {});
+    tg.ondblclick = () => revealObject(o.objectId);
+    tg.title = 'Double-click to show in Elements';
+  }
+  if (!o.objectId) return w;
+  tg.onclick = async () => {
+    if (w.classList.toggle('op')) {
+      let ps = w.querySelector('.ps');
+      if (!ps) { ps = el('div', 'ps'); w.append(ps); await props(o.objectId, ps); }
+      ps.hidden = false;
+    } else w.querySelector('.ps').hidden = true;
+  };
+  return w;
+}
+async function props(objectId, box) {
+  const r = await cdp('Runtime.getProperties', { objectId, ownProperties: true, generatePreview: true }).catch(() => null);
+  if (!r) { box.textContent = '(unavailable)'; return; }
+  const list = [...(r.result || []), ...(r.internalProperties || []).map(p => ({ ...p, enumerable: false })), ...(r.privateProperties || []).map(p => ({ ...p, enumerable: false }))];
+  for (const p of list) {
+    const row = el('div');
+    row.append(el('span', 'pn' + (p.enumerable ? '' : ' ne'), p.name), ': ');
+    if (p.value) row.append(objEl(p.value, false));
+    else if (p.get) {
+      const g = el('span', 'getter', '(…)'); g.title = 'Invoke getter';
+      g.onclick = async () => {
+        const v = await cdp('Runtime.callFunctionOn', { objectId, functionDeclaration: `function(){return this[${JSON.stringify(p.name)}]}`, generatePreview: true }).catch(() => null);
+        if (v?.result) g.replaceWith(objEl(v.result, false));
+      };
+      row.append(g);
+    }
+    box.append(row);
+  }
+  if (!list.length) box.append(el('div', 'u', 'No properties'));
+}
+function tableEl(o) {
+  const p = o.preview, rows = p?.properties || [];
+  const cols = [...new Set(rows.flatMap(r => r.valuePreview ? r.valuePreview.properties.map(x => x.name) : ['Value']))];
+  const t = el('table', 'ct');
+  t.innerHTML = `<tr><th>(index)</th>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr>` + rows.map(r => `<tr><td>${esc(r.name)}</td>${cols.map(c => {
+    const v = r.valuePreview ? r.valuePreview.properties.find(x => x.name === c) : c === 'Value' ? r : null;
+    return `<td>${v ? esc(pvText(v)) : ''}</td>`;
+  }).join('')}</tr>`).join('');
+  return t;
+}
+function argsEls(args, type) {
+  if (type === 'table' && args[0]?.preview) return [tableEl(args[0])];
+  const out = []; let i = 0;
+  if (args[0]?.type === 'string' && /%[sdifoOc]/.test(args[0].value)) {
+    i = 1; let style = '';
+    for (const part of args[0].value.split(/(%[sdifoOc])/)) {
+      const m = /^%([sdifoOc])$/.exec(part);
+      const put = t => { const s = el('span', '', t); if (style) s.style.cssText = style; out.push(s); };
+      if (!m) { if (part) put(part); continue; }
+      const a = args[i++];
+      if (!a) { put(part); continue; }
+      if (m[1] === 'c') style = safeCss(String(a.value ?? ''));
+      else if (m[1] === 's') put(a.type === 'string' ? a.value : summary(a) ?? String(a.value));
+      else if ('dif'.includes(m[1])) put(String(m[1] === 'f' ? Number(a.value ?? a.description) : parseInt(a.value ?? a.description)));
+      else out.push(objEl(a, false));
+    }
+  }
+  for (; i < args.length; i++) { if (out.length) out.push(document.createTextNode(' ')); out.push(objEl(args[i], true)); }
+  return out;
+}
+function stackEl(t) {
+  const pre = el('div', 'u');
+  pre.textContent = (t?.callFrames || []).slice(0, 12).map(f => `    at ${f.functionName || '(anonymous)'} (${f.url}:${f.lineNumber + 1}:${f.columnNumber + 1})`).join('\n');
+  return pre;
+}
+function logEl(e) {
+  const d = el('div', 'msg ' + e.level);
+  d.style.paddingLeft = 12 + e.depth * 16 + 'px';
+  if (e.note) { d.classList.add('note'); d.textContent = e.note; return d; }
+  const b = el('div', 'mb');
+  if (e.input != null) { d.classList.add('in'); b.textContent = e.input; }
+  else if (e.result) { d.classList.add('out'); b.append(objEl(e.result, false)); }
+  else if (e.exc) {
+    const x = e.exc;
+    b.textContent = x.exception ? (x.exception.description || summary(x.exception)) : x.text;
+    if (!x.exception?.description?.includes('\n    at') && x.stackTrace) b.append(stackEl(x.stackTrace));
+  } else if (e.text != null) b.textContent = e.text;
+  else {
+    if (e.type === 'startGroup' || e.type === 'startGroupCollapsed') b.style.fontWeight = '600';
+    if (e.type === 'assert') b.append('Assertion failed: ');
+    b.append(...argsEls(e.args, e.type));
+    if (e.stack) b.append(stackEl(e.stack));
+  }
+  if (e.n > 1) d.append(el('span', 'n', e.n));
+  d.append(b);
+  if (e.at) { const a = el('span', 'at', shortUrl(e.at.url) + ':' + (e.at.line + 1)); a.title = e.at.url; d.append(a); }
+  return d;
+}
+const conMatch = e => {
+  const lv = $('clv').querySelector('.on').dataset.l, q = $('cq').value.trim().toLowerCase();
+  if (lv && e.level !== lv && !(lv === 'info' && e.level === 'log') && e.input == null && e.result == null) return false;
+  if (!q) return true;
+  const txt = e.note || e.input || e.text || (e.exc && (e.exc.exception?.description || e.exc.text)) || (e.args || []).map(a => a.value ?? a.description ?? '').join(' ') || (e.result ? summary(e.result) : '');
+  return String(txt).toLowerCase().includes(q);
+};
+function renderCon() {
+  const box = $('log');
+  box.replaceChildren(...st().logs.filter(conMatch).map(logEl));
+  box.scrollTop = box.scrollHeight;
+}
+function appendLog(e) {
+  if (!conMatch(e)) return;
+  const box = $('log'), stick = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
+  box.append(logEl(e));
+  if (stick) box.scrollTop = box.scrollHeight;
+}
+function conClear() { const s = st(); s.logs = []; s.errs = 0; badge(); renderCon(); cdp('Runtime.releaseObjectGroup', { objectGroup: 'console' }).catch(() => {}); }
+$('cclr').onclick = conClear;
+$('cq').oninput = later(renderCon, 120);
+$('clv').onclick = e => { const b = e.target.closest('button'); if (!b) return; for (const x of $('clv').children) x.classList.toggle('on', x === b); renderCon(); };
+$('cpres').checked = store('yw-dev-cpres', false);
+$('cpres').onchange = () => keep('yw-dev-cpres', $('cpres').checked);
+
+// REPL: history, eager preview, completion.
+const hist = store('yw-dev-hist', []);
+let hi = hist.length, acList = [], acSel = 0;
+const rin = $('rin');
+const grow = () => { rin.style.height = 'auto'; rin.style.height = Math.min(160, rin.scrollHeight) + 'px'; };
+async function run(code) {
+  if (!code.trim()) return;
+  if (hist[hist.length - 1] !== code) { hist.push(code); if (hist.length > 200) hist.shift(); keep('yw-dev-hist', hist); }
+  hi = hist.length;
+  const s = st();
+  addLog(s, { level: 'log', input: code }, true);
+  const r = await cdp('Runtime.evaluate', { expression: code, replMode: true, includeCommandLineAPI: true, generatePreview: true, userGesture: true, objectGroup: 'console' }).catch(e => ({ exceptionDetails: { text: String(e) } }));
+  if (r.exceptionDetails) addLog(s, { level: 'error', exc: r.exceptionDetails }, true);
+  else addLog(s, { level: 'log', result: r.result }, true);
+}
+const eager = later(async () => {
+  const code = rin.value;
+  if (!code.trim() || code.length > 2000) { $('eager').textContent = ''; return; }
+  const r = await cdp('Runtime.evaluate', { expression: code, replMode: true, includeCommandLineAPI: true, generatePreview: true, throwOnSideEffect: true, timeout: 300, objectGroup: 'eager' }).catch(() => null);
+  cdp('Runtime.releaseObjectGroup', { objectGroup: 'eager' }).catch(() => {});
+  if (rin.value !== code) return;
+  $('eager').textContent = !r || r.exceptionDetails || r.result.type === 'undefined' ? '' : (r.result.type === 'string' ? JSON.stringify(r.result.value) : prim(r.result)?.[1] ?? summary(r.result));
+}, 150);
+const names = {};
+const complete = later(async () => {
+  const m = /([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)?(\.)?([A-Za-z_$][\w$]*)?$/.exec(rin.value.slice(0, rin.selectionStart));
+  let base = 'globalThis', pre = '';
+  if (m) {
+    const chain = (m[1] || '') + (m[2] || '') + (m[3] || '');
+    const dot = chain.lastIndexOf('.');
+    if (dot >= 0) { base = chain.slice(0, dot); pre = chain.slice(dot + 1); } else pre = chain;
+  }
+  if (!pre && base === 'globalThis') { acHide(); return; }
+  const key = tab + ':' + base;
+  if (!names[key]) {
+    const r = await cdp('Runtime.evaluate', { expression: `(()=>{const s=new Set();let o=(${base});for(let i=0;o!=null&&i<20;o=Object.getPrototypeOf(o),i++)try{Object.getOwnPropertyNames(o).forEach(k=>s.add(k))}catch{}return[...s]})()`, returnByValue: true, throwOnSideEffect: true, timeout: 300, includeCommandLineAPI: true }).catch(() => null);
+    if (!r || r.exceptionDetails) { acHide(); return; }
+    names[key] = r.result.value || [];
+    setTimeout(() => delete names[key], 5000);
+  }
+  acList = names[key].filter(n => n.startsWith(pre) && n !== pre && !/^\d/.test(n)).sort((a, b) => a.length - b.length || a.localeCompare(b)).slice(0, 40).map(n => [n, pre]);
+  acSel = 0; acDraw();
+}, 60);
+function acDraw() {
+  $('ac').hidden = !acList.length;
+  $('ac').innerHTML = acList.map(([n, p], i) => `<div class="${i === acSel ? 'on' : ''}" data-i="${i}"><b>${esc(p)}</b>${esc(n.slice(p.length))}</div>`).join('');
+  $('ac').querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+}
+const acHide = () => { acList = []; $('ac').hidden = true; };
+function acTake(i = acSel) {
+  const [n, p] = acList[i]; const c = rin.selectionStart;
+  rin.setRangeText(n.slice(p.length), c, c, 'end'); acHide(); eager();
+}
+$('ac').onmousedown = e => { const d = e.target.closest('[data-i]'); if (d) { e.preventDefault(); acTake(+d.dataset.i); } };
+rin.oninput = () => { grow(); eager(); complete(); };
+rin.onblur = () => setTimeout(acHide, 100);
+rin.onkeydown = e => {
+  if (!$('ac').hidden) {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); acSel = (acSel + (e.key === 'ArrowDown' ? 1 : -1) + acList.length) % acList.length; return acDraw(); }
+    if (e.key === 'Tab' || (e.key === 'ArrowRight' && rin.selectionStart === rin.value.length)) { e.preventDefault(); return acTake(); }
+    if (e.key === 'Escape') { e.preventDefault(); return acHide(); }
+  }
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault(); const c = rin.value; rin.value = ''; grow(); $('eager').textContent = ''; acHide(); run(c);
+  } else if (e.key === 'ArrowUp' && !rin.value.slice(0, rin.selectionStart).includes('\n') && hi > 0) {
+    e.preventDefault(); rin.value = hist[--hi]; grow();
+  } else if (e.key === 'ArrowDown' && !rin.value.slice(rin.selectionEnd).includes('\n') && hi < hist.length) {
+    e.preventDefault(); rin.value = hist[++hi] ?? ''; grow();
+  } else if (e.key === 'Tab') e.preventDefault();
+};
+
+// ---------- Network ----------
+const TYPE = { XHR: 'fetch', Fetch: 'fetch', EventSource: 'fetch', Document: 'doc', Stylesheet: 'css', Script: 'js', Font: 'font', Image: 'img', Media: 'media', WebSocket: 'ws' };
+const WFC = { doc: 'd', css: 'c', js: 'j', media: 'm', img: 'm' };
+const netDraw = frameSched(() => { if (pane === 'net') renderNet(); });
+function navStart(s, url, cur) {
+  if (!$('npres').checked) { s.reqs.clear(); s.sel = null; }
+  if (!$('cpres').checked) { s.logs = []; s.errs = 0; s.depth = 0; if (cur) { badge(); if (pane === 'con') renderCon(); } }
+  else addLog(s, { level: 'log', note: 'Navigated to ' + url }, cur);
+  s.dom = null;
+  if (cur && pane === 'el') setTimeout(loadDoc, 300);
+}
+H['Network.requestWillBeSent'] = (p, s, cur) => {
+  if (p.type === 'Document' && p.requestId === p.loaderId && !p.redirectResponse && (!s.frame || p.frameId === s.frame)) { s.frame = p.frameId; navStart(s, p.request.url, cur); }
+  const old = s.reqs.get(p.requestId);
+  if (old && p.redirectResponse) {
+    s.reqs.delete(p.requestId);
+    Object.assign(old, { id: p.requestId + '~' + p.timestamp, status: p.redirectResponse.status, statusText: p.redirectResponse.statusText, resHeaders: p.redirectResponse.headers, end: p.timestamp, done: true });
+    s.reqs.set(old.id, old);
+  }
+  const u = p.request.url;
+  s.reqs.set(p.requestId, {
+    id: p.requestId, rid: p.requestId, url: u, method: p.request.method, type: p.type || 'Other', start: p.timestamp, wall: p.wallTime,
+    reqHeaders: p.request.headers, post: p.request.postData, hasPost: p.request.hasPostData,
+    init: p.initiator?.type === 'parser' ? shortUrl(p.initiator.url) : p.initiator?.type === 'script' ? shortUrl(p.initiator.stack?.callFrames?.[0]?.url) || 'script' : p.initiator?.type || '',
+    initUrl: p.initiator?.url || p.initiator?.stack?.callFrames?.[0]?.url || '',
+  });
+  if (s.reqs.size > 4000) s.reqs.delete(s.reqs.keys().next().value);
+  if (cur) netDraw();
+};
+H['Network.responseReceived'] = (p, s, cur) => {
+  const r = s.reqs.get(p.requestId); if (!r) return;
+  const x = p.response;
+  Object.assign(r, { status: x.status, statusText: x.statusText, resHeaders: x.headers, mime: x.mimeType, remote: x.remoteIPAddress ? x.remoteIPAddress + ':' + x.remotePort : '', proto: x.protocol, timing: x.timing, type: p.type || r.type,
+    cache: x.fromDiskCache ? 'disk cache' : x.fromServiceWorker ? 'service worker' : x.fromPrefetchCache ? 'prefetch cache' : r.cache, size: x.encodedDataLength });
+  // ab.rs answers blocked requests itself with "403 Blocked" and no server address.
+  if (x.status === 403 && x.statusText === 'Blocked' && !x.remoteIPAddress) r.ad = true;
+  if (cur) netDraw();
+};
+H['Network.loadingFinished'] = (p, s, cur) => { const r = s.reqs.get(p.requestId); if (!r) return; r.end = p.timestamp; r.size = p.encodedDataLength; r.done = true; if (cur) netDraw(); };
+H['Network.loadingFailed'] = (p, s, cur) => {
+  const r = s.reqs.get(p.requestId); if (!r) return;
+  Object.assign(r, { end: p.timestamp, done: true, failed: p.canceled ? '(canceled)' : p.blockedReason ? '(blocked:' + p.blockedReason + ')' : p.errorText });
+  if (cur) netDraw();
+};
+H['Network.requestServedFromCache'] = (p, s) => { const r = s.reqs.get(p.requestId); if (r) r.cache = 'memory cache'; };
+H['Page.frameNavigated'] = (p, s) => { if (!p.frame.parentId) s.frame = p.frame.id; };
+
+let nsort = { k: 'start', d: 1 };
+const nameOf = r => { try { const u = new URL(r.url); if (u.protocol === 'data:') return r.url.slice(0, 40); return (u.pathname.split('/').filter(Boolean).pop() || u.host) + u.search; } catch { return r.url; } };
+function netList() {
+  const t = $('nty').querySelector('.on').dataset.t, q = $('nq').value.trim().toLowerCase();
+  const terms = q.split(/\s+/).filter(Boolean);
+  let list = [...st().reqs.values()].filter(r => {
+    if (t === 'ad' ? !r.ad : t && (TYPE[r.type] || 'other') !== t) return false;
+    for (const w of terms) {
+      if (w.startsWith('status:')) { if (String(r.status ?? '') !== w.slice(7)) return false; }
+      else if (w.startsWith('domain:')) { try { if (!new URL(r.url).host.includes(w.slice(7))) return false; } catch { return false; } }
+      else if (w.startsWith('method:')) { if (r.method.toLowerCase() !== w.slice(7)) return false; }
+      else if (w.startsWith('-')) { if (w.length > 1 && r.url.toLowerCase().includes(w.slice(1))) return false; }
+      else if (!r.url.toLowerCase().includes(w)) return false;
+    }
+    return true;
+  });
+  const val = { name: nameOf, status: r => r.status ?? 0, type: r => r.type, init: r => r.init, size: r => r.size ?? 0, time: r => (r.end ?? 1e12) - r.start, start: r => r.start };
+  const f = val[nsort.k];
+  list.sort((a, b) => { const x = f(a), y = f(b); return (x < y ? -1 : x > y ? 1 : 0) * nsort.d; });
+  return list;
+}
+function renderNet() {
+  const list = netList(), all = [...st().reqs.values()];
+  $('nempty').hidden = all.length > 0;
+  const t0 = Math.min(...all.map(r => r.start)), t1 = Math.max(...all.map(r => r.end ?? r.start), t0 + 0.001), span = t1 - t0;
+  const sel = st().sel;
+  $('nrows').innerHTML = list.map(r => {
+    const bad = r.failed || r.status >= 400;
+    const st_ = r.ad ? 'blocked' : r.failed ? r.failed : r.status ?? '…';
+    const size = r.ad ? '' : r.cache && r.cache !== 'disk cache' && !r.size ? `<small>${r.cache}</small>` : r.cache === 'disk cache' ? '<small>disk cache</small>' : fmtB(r.size);
+    const left = (r.start - t0) / span * 100, w = ((r.end ?? t1) - r.start) / span * 100;
+    let host = ''; try { host = new URL(r.url).host; } catch {}
+    return `<tr data-id="${esc(r.id)}" class="${r.id === sel ? 'sel' : ''} ${r.ad ? 'ad' : bad ? 'bad' : ''}" title="${esc(r.url)}"><td>${esc(nameOf(r))} <small>${esc(host)}</small></td><td>${esc(st_)}</td><td>${esc(r.type)}</td><td class="wide" title="${esc(r.initUrl)}">${esc(r.init)}</td><td>${size}</td><td>${r.end ? fmtMs((r.end - r.start) * 1000) : '<small>pending</small>'}</td><td class="wide"><div class="wf"><i class="${WFC[TYPE[r.type]] || ''}" style="left:${left.toFixed(2)}%;width:${Math.max(w, 0.3).toFixed(2)}%"></i></div></td></tr>`;
+  }).join('');
+  const bytes = all.reduce((n, r) => n + (r.ad ? 0 : r.size || 0), 0), ads = all.filter(r => r.ad).length;
+  $('nfoot').textContent = all.length ? `${list.length === all.length ? all.length : list.length + ' / ' + all.length} requests · ${fmtB(bytes)} transferred · finished in ${fmtMs(span * 1000)}${ads ? ` · ${ads} blocked by the ad blocker` : ''}` : '';
+  if (sel && !$('ndet').hidden) { const r = st().reqs.get(sel); if (r && !r._drawn) netDetail(r); }
+}
+$('nrows').onclick = e => { const tr = e.target.closest('tr'); if (!tr) return; st().sel = tr.dataset.id; renderNet(); netDetail(st().reqs.get(tr.dataset.id)); };
+document.querySelector('.nt thead').onclick = e => { const k = e.target.closest('th')?.dataset.k; if (!k) return; nsort = { k, d: nsort.k === k ? -nsort.d : 1 }; renderNet(); };
+$('nq').oninput = later(renderNet, 120);
+$('nty').onclick = e => { const b = e.target.closest('button'); if (!b) return; for (const x of $('nty').children) x.classList.toggle('on', x === b); renderNet(); };
+$('nclr').onclick = () => { st().reqs.clear(); st().sel = null; $('ndet').hidden = true; renderNet(); };
+$('npres').checked = store('yw-dev-npres', false);
+$('npres').onchange = () => keep('yw-dev-npres', $('npres').checked);
+$('ncache').onchange = () => { st().nocache = $('ncache').checked; cdp('Network.setCacheDisabled', { cacheDisabled: $('ncache').checked }); };
+const THR = { '4g': [40, 9e6 / 8, 1.5e6 / 8], s4g: [150, 1.6e6 / 8, 750e3 / 8], '3g': [400, 400e3 / 8, 400e3 / 8] };
+$('nthr').onchange = () => {
+  const v = $('nthr').value, t = THR[v]; st().thr = v;
+  cdp('Network.emulateNetworkConditions', { offline: v === 'off', latency: t?.[0] || 0, downloadThroughput: t ? t[1] : -1, uploadThroughput: t ? t[2] : -1 });
+  emuBadge();
+};
+
+const curlQ = s => "'" + String(s).replace(/'/g, "'\\''") + "'";
+function asCurl(r) {
+  const h = Object.entries(r.reqHeaders || {}).map(([k, v]) => ` \\\n  -H ${curlQ(k + ': ' + v)}`).join('');
+  return `curl ${curlQ(r.url)}${r.method !== 'GET' ? ' -X ' + r.method : ''}${h}${r.post ? ` \\\n  --data-raw ${curlQ(r.post)}` : ''}`;
+}
+const asFetch = r => `fetch(${JSON.stringify(r.url)}, ${JSON.stringify({ method: r.method, headers: r.reqHeaders, body: r.post, credentials: 'include' }, null, 2)});`;
+let dtab = 'h';
+function kvHtml(o) { return `<div class="kv">${Object.entries(o || {}).sort().map(([k, v]) => `<b>${esc(k)}</b><span>${esc(v)}</span>`).join('') || '<span class="u">none</span>'}</div>`; }
+async function netDetail(r) {
+  const d = $('ndet'); if (!r) { d.hidden = true; return; }
+  d.hidden = false; r._drawn = r.done;
+  const tabs = [['h', 'Headers'], ['p', 'Preview'], ['b', 'Response'], ['t', 'Timing']];
+  let body = '';
+  if (dtab === 'h') {
+    let q = ''; try { const u = new URL(r.url); if (u.search) q = '<h4>Query</h4>' + kvHtml(Object.fromEntries(u.searchParams)); } catch {}
+    body = `<h4>General</h4>${kvHtml({ URL: r.url, Method: r.method, Status: r.ad ? '403 · blocked by YukiWeb ad blocker' : r.failed || (r.status != null ? r.status + ' ' + (r.statusText || '') : 'pending'), 'Remote address': r.remote || '', Protocol: r.proto || '', Served: r.cache || 'network', Initiator: r.initUrl || r.init })}
+      ${q}<h4>Response headers</h4>${kvHtml(r.resHeaders)}<h4>Request headers</h4>${kvHtml(r.reqHeaders)}${r.post ? `<h4>Payload</h4><pre class="code">${esc(r.post.slice(0, 20000))}</pre>` : ''}`;
+  } else if (dtab === 't') {
+    const t = r.timing, total = r.end ? (r.end - r.start) * 1000 : 0;
+    const ph = t ? [['Queueing / stalled', 0, Math.max(0, t.dnsStart >= 0 ? t.dnsStart : t.connectStart >= 0 ? t.connectStart : t.sendStart)],
+      ['DNS lookup', t.dnsStart, t.dnsEnd], ['Connecting', t.connectStart, t.connectEnd], ['TLS', t.sslStart, t.sslEnd],
+      ['Request sent', t.sendStart, t.sendEnd], ['Waiting for server (TTFB)', t.sendEnd, t.receiveHeadersEnd ?? t.receiveHeadersStart],
+      ['Content download', t.receiveHeadersEnd, total ? (r.end - t.requestTime) * 1000 : null]].filter(([, a, b]) => a >= 0 && b > a) : [];
+    const max = Math.max(total, ...ph.map(p => p[2]), 1);
+    body = `<div class="tim">${ph.map(([n, a, b]) => `<div class="r"><span>${n}</span><div style="position:relative;height:8px"><i style="position:absolute;left:${a / max * 100}%;width:${Math.max(0.5, (b - a) / max * 100)}%"></i></div><span>${fmtMs(b - a)}</span></div>`).join('') || '<div class="u">No timing for this request</div>'}
+      <div class="r" style="margin-top:8px"><b>Total</b><span></span><b>${fmtMs(total)}</b></div></div>`;
+  } else {
+    body = '<div class="empty">Loading…</div>';
+  }
+  d.innerHTML = `<div class="tabs">${tabs.map(([k, n]) => `<button class="tb${k === dtab ? '' : ''}" data-d="${k}" style="${k === dtab ? 'background:var(--soft);font-weight:600' : ''}">${n}</button>`).join('')}<span class="sp" style="flex:1"></span><button class="tb" data-c="url">Copy URL</button><button class="tb" data-c="curl">Copy as cURL</button><button class="tb" data-c="fetch">Copy as fetch</button><button class="ib" data-c="x" title="Close">${icon('x')}</button></div><div id="dbody">${body}</div>`;
+  if (dtab === 'p' || dtab === 'b') {
+    if (!r.done && !r.ad) { $('dbody').innerHTML = '<div class="empty">Waiting for the response…</div>'; return; }
+    if (r.ad || r.failed) { $('dbody').innerHTML = `<div class="empty">${r.ad ? 'Blocked by the ad blocker, nothing was downloaded.' : 'Failed: ' + esc(r.failed)}</div>`; return; }
+    if (r.body === undefined) r.body = await cdp('Network.getResponseBody', { requestId: r.rid }).catch(() => null);
+    const b = r.body, box = $('dbody'); if (!box || st().sel !== r.id) return;
+    if (!b) { box.innerHTML = '<div class="empty">No response body available (it may not be finished, or the page dropped it).</div>'; return; }
+    const mime = r.mime || '';
+    if (dtab === 'p' && mime.startsWith('image/')) box.innerHTML = `<img src="data:${esc(mime)};base64,${b.base64Encoded ? b.body : btoa(unescape(encodeURIComponent(b.body)))}">`;
+    else if (dtab === 'p' && /json/.test(mime) || dtab === 'p' && /^\s*[\[{]/.test(b.body)) {
+      try { const obj = JSON.parse(b.base64Encoded ? atob(b.body) : b.body); box.innerHTML = ''; box.append(jsonTree(obj, true)); box.firstChild.style.padding = '8px 10px'; }
+      catch { box.innerHTML = `<pre class="code">${esc((b.base64Encoded ? atob(b.body) : b.body).slice(0, 300000))}</pre>`; }
+    } else if (dtab === 'p' && /html/.test(mime)) box.innerHTML = `<iframe sandbox style="width:100%;height:calc(100% - 4px);min-height:300px;border:0;background:#fff" srcdoc="${esc(b.body)}"></iframe>`;
+    else box.innerHTML = b.base64Encoded && !/text|json|javascript|xml|svg/.test(mime) ? `<div class="empty">Binary data, ${fmtB(atob(b.body).length)}</div>` : `<pre class="code">${esc((b.base64Encoded ? atob(b.body) : b.body).slice(0, 300000))}</pre>`;
+  }
+}
+function jsonTree(v, open) {
+  if (v === null || typeof v !== 'object') return el('span', typeof v === 'string' ? 's' : v === null ? 'u' : 'n', JSON.stringify(v));
+  const w = el('div', 'o' + (open ? ' op' : '')), arr = Array.isArray(v), keys = Object.keys(v);
+  const tg = el('span', 'tg mono', arr ? `Array(${keys.length})` : `{${keys.slice(0, 4).join(', ')}${keys.length > 4 ? ', …' : ''}}`);
+  const ps = el('div', 'ps mono'); ps.hidden = !open;
+  let built = false;
+  const build = () => { if (built) return; built = true; for (const k of keys) { const row = el('div'); row.append(el('span', 'pn', k), ': ', jsonTree(v[k], false)); ps.append(row); } };
+  if (open) build();
+  tg.onclick = () => { build(); ps.hidden = !w.classList.toggle('op'); };
+  w.append(tg, ps); return w;
+}
+$('ndet').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const r = st().reqs.get(st().sel); if (!r) return;
+  if (b.dataset.d) { dtab = b.dataset.d; netDetail(r); }
+  else if (b.dataset.c === 'x') { $('ndet').hidden = true; st().sel = null; renderNet(); }
+  else { copy(b.dataset.c === 'url' ? r.url : b.dataset.c === 'curl' ? asCurl(r) : asFetch(r)); b.textContent = 'Copied'; setTimeout(() => netDetail(r), 900); }
+};
+
+// ---------- Elements ----------
+const HL = { showInfo: true, showStyles: true, showAccessibilityInfo: true, contentColor: { r: 111, g: 168, b: 220, a: 0.66 }, paddingColor: { r: 147, g: 196, b: 125, a: 0.55 }, borderColor: { r: 255, g: 229, b: 153, a: 0.66 }, marginColor: { r: 246, g: 178, b: 107, a: 0.66 } };
+const kids = n => [...(n.pseudoElements || []).filter(p => p.pseudoType === 'before' || p.pseudoType === 'marker'), ...(n.shadowRoots || []), ...(n.contentDocument ? [n.contentDocument] : []), ...(n.children || []), ...(n.pseudoElements || []).filter(p => p.pseudoType === 'after')];
+const hasKids = n => kids(n).length > 0 || n.childNodeCount > 0;
+function ins(dm, n, parent) {
+  dm.nodes.set(n.nodeId, n);
+  if (parent) dm.parent.set(n.nodeId, parent);
+  for (const c of kids(n)) ins(dm, c, n.nodeId);
+}
+const treeDraw = frameSched(() => { if (pane === 'el') renderTree(); });
+async function loadDoc() {
+  const s = st(), id = tab;
+  const r = await cdp('DOM.getDocument', { depth: 3, pierce: true }).catch(() => null);
+  if (!r || id !== tab) { if (pane === 'el') $('tree').innerHTML = '<div class="empty">This page can\'t be inspected.</div>'; return; }
+  const dm = s.dom = { nodes: new Map(), parent: new Map(), root: r.root, open: new Set(), sel: null };
+  ins(dm, r.root, null);
+  const html = (r.root.children || []).find(n => n.nodeName === 'HTML');
+  if (html) { dm.open.add(html.nodeId); const body = (html.children || []).find(n => n.nodeName === 'BODY'); if (body) { openNode(dm, body); dm.sel = body.nodeId; } }
+  renderTree(); sideDraw();
+}
+function openNode(dm, n) {
+  dm.open.add(n.nodeId);
+  if (n.childNodeCount > 0 && !n.children) cdp('DOM.requestChildNodes', { nodeId: n.nodeId, depth: 1, pierce: true }).catch(() => {});
+}
+const dmOf = s => s.dom;
+H['DOM.setChildNodes'] = (p, s, cur) => { const dm = dmOf(s); if (!dm) return; const n = dm.nodes.get(p.parentId); if (!n) return; n.children = p.nodes; for (const c of p.nodes) ins(dm, c, n.nodeId); if (cur) treeDraw(); };
+H['DOM.childNodeInserted'] = (p, s, cur) => {
+  const dm = dmOf(s); const n = dm?.nodes.get(p.parentNodeId); if (!n) return;
+  n.children ||= [];
+  const i = p.previousNodeId ? n.children.findIndex(c => c.nodeId === p.previousNodeId) + 1 : 0;
+  n.children.splice(i, 0, p.node); n.childNodeCount = n.children.length; ins(dm, p.node, n.nodeId); if (cur) treeDraw();
+};
+H['DOM.childNodeRemoved'] = (p, s, cur) => { const dm = dmOf(s); const n = dm?.nodes.get(p.parentNodeId); if (!n || !n.children) return; n.children = n.children.filter(c => c.nodeId !== p.nodeId); n.childNodeCount = n.children.length; dm.nodes.delete(p.nodeId); if (cur) treeDraw(); };
+H['DOM.childNodeCountUpdated'] = (p, s, cur) => { const n = dmOf(s)?.nodes.get(p.nodeId); if (n) { n.childNodeCount = p.childNodeCount; if (cur) treeDraw(); } };
+H['DOM.attributeModified'] = (p, s, cur) => { const n = dmOf(s)?.nodes.get(p.nodeId); if (!n) return; const a = n.attributes ||= []; const i = a.findIndex((x, j) => j % 2 === 0 && x === p.name); if (i >= 0) a[i + 1] = p.value; else a.push(p.name, p.value); if (cur) treeDraw(); };
+H['DOM.attributeRemoved'] = (p, s, cur) => { const n = dmOf(s)?.nodes.get(p.nodeId); if (!n?.attributes) return; const i = n.attributes.findIndex((x, j) => j % 2 === 0 && x === p.name); if (i >= 0) n.attributes.splice(i, 2); if (cur) treeDraw(); };
+H['DOM.characterDataModified'] = (p, s, cur) => { const n = dmOf(s)?.nodes.get(p.nodeId); if (n) { n.nodeValue = p.characterData; if (cur) treeDraw(); } };
+H['DOM.documentUpdated'] = (p, s, cur) => { s.dom = null; if (cur && pane === 'el') loadDoc(); };
+
+const attrsHtml = n => { let h = ''; const a = n.attributes || []; for (let i = 0; i < a.length; i += 2) h += ` <span class="an">${esc(a[i])}</span>${a[i + 1] !== '' ? `=<span class="av">"${esc(a[i + 1].length > 300 ? a[i + 1].slice(0, 300) + '…' : a[i + 1])}"</span>` : ''}`; return h; };
+let flat = [];
+function renderTree() {
+  const s = st(), dm = s.dom, box = $('tree');
+  if (!dm) { box.innerHTML = '<div class="empty">Loading…</div>'; return; }
+  const out = []; flat = [];
+  const line = (n, d, inner, tw) => { flat.push(n.nodeId); out.push(`<div class="nd${dm.sel === n.nodeId ? ' sel' : ''}" data-n="${n.nodeId}" style="padding-left:${d * 14 + 4}px"><i class="tw ${tw}"></i>${inner}</div>`); };
+  const walk = (n, d) => {
+    const t = n.nodeType, open = dm.open.has(n.nodeId), more = hasKids(n);
+    if (t === 9 && n === dm.root) { for (const c of kids(n)) walk(c, d); return; }
+    if (t === 3) { const v = n.nodeValue.trim(); if (v) line(n, d, `<span class="tx">"${esc(v.length > 400 ? v.slice(0, 400) + '…' : v)}"</span>`, ''); return; }
+    if (t === 8) { line(n, d, `<span class="cm">&lt;!--${esc(n.nodeValue.slice(0, 300))}--&gt;</span>`, ''); return; }
+    if (t === 10) { line(n, d, `<span class="cm">&lt;!DOCTYPE ${esc(n.nodeName)}&gt;</span>`, ''); return; }
+    if (t === 9 || t === 11) {
+      line(n, d, `<span class="cm">${t === 9 ? '#document' : '#shadow-root (' + esc(n.shadowRootType || 'open') + ')'}</span>`, more ? (open ? 'o' : 'c') : '');
+      if (open) for (const c of kids(n)) walk(c, d + 1);
+      return;
+    }
+    if (n.pseudoType) { line(n, d, `<span class="tag">::${esc(n.pseudoType)}</span>`, ''); return; }
+    const tag = n.localName || n.nodeName.toLowerCase();
+    const k = kids(n), lone = k.length === 1 && k[0].nodeType === 3 && k[0].nodeValue.length < 100 && !k[0].nodeValue.includes('\n');
+    const head = `<span class="tag">&lt;${esc(tag)}</span>${attrsHtml(n)}<span class="tag">&gt;</span>`, close = `<span class="tag">&lt;/${esc(tag)}&gt;</span>`;
+    const voidEl = /^(area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)$/.test(tag);
+    if (voidEl) return line(n, d, head, '');
+    if (lone) return line(n, d, head + `<span class="tx">${esc(k[0].nodeValue)}</span>` + close, '');
+    if (!more) return line(n, d, head + close, '');
+    if (!open) return line(n, d, head + '…' + close, 'c');
+    line(n, d, head, 'o');
+    for (const c of k) walk(c, d + 1);
+    out.push(`<div class="nd" style="padding-left:${d * 14 + 4}px"><i class="tw"></i>${close}</div>`);
+  };
+  walk(dm.root, 0);
+  box.innerHTML = out.join('');
+  crumbs();
+}
+function crumbs() {
+  const dm = st().dom; if (!dm) return;
+  const path = []; for (let id = dm.sel; id; id = dm.parent.get(id)) { const n = dm.nodes.get(id); if (n?.nodeType === 1) path.unshift(n); }
+  $('crumbs').innerHTML = path.map(n => `<span data-n="${n.nodeId}">${esc(sel1(n))}</span>`).join('');
+}
+const attr = (n, k) => { const a = n.attributes || []; for (let i = 0; i < a.length; i += 2) if (a[i] === k) return a[i + 1]; return null; };
+const sel1 = n => { const id = attr(n, 'id'), cl = (attr(n, 'class') || '').trim().split(/\s+/).filter(Boolean); return (n.localName || n.nodeName.toLowerCase()) + (id ? '#' + id : '') + cl.slice(0, 2).map(c => '.' + c).join(''); };
+function cssPath(dm, id) {
+  const parts = [];
+  for (let n = dm.nodes.get(id); n && n.nodeType === 1; n = dm.nodes.get(dm.parent.get(n.nodeId))) {
+    const tag = n.localName, nid = attr(n, 'id');
+    if (nid && /^[A-Za-z][\w-]*$/.test(nid)) { parts.unshift('#' + nid); break; }
+    const p = dm.nodes.get(dm.parent.get(n.nodeId)), sib = (p?.children || []).filter(c => c.localName === tag);
+    parts.unshift(tag + (sib.length > 1 ? `:nth-of-type(${sib.indexOf(n) + 1})` : ''));
+    if (tag === 'html' || tag === 'body') { if (tag === 'body') parts[0] = 'body'; break; }
+  }
+  return parts.join(' > ');
+}
+function select(id, scroll) {
+  const dm = st().dom; if (!dm) return;
+  dm.sel = id;
+  for (let p = dm.parent.get(id); p; p = dm.parent.get(p)) dm.open.add(p);
+  cdp('DOM.setInspectedNode', { nodeId: id }).catch(() => {});
+  renderTree(); sideDraw();
+  if (scroll) $('tree').querySelector('.nd.sel')?.scrollIntoView({ block: 'center' });
+}
+$('tree').onclick = e => {
+  const d = e.target.closest('.nd[data-n]'); if (!d) return;
+  const dm = st().dom, id = +d.dataset.n, n = dm.nodes.get(id);
+  if (e.target.classList.contains('tw') && hasKids(n)) { dm.open.has(id) ? dm.open.delete(id) : openNode(dm, n); renderTree(); return; }
+  select(id);
+};
+$('tree').ondblclick = e => { const d = e.target.closest('.nd[data-n]'); if (!d) return; const dm = st().dom, id = +d.dataset.n, n = dm.nodes.get(id); if (hasKids(n)) { dm.open.has(id) ? dm.open.delete(id) : openNode(dm, n); renderTree(); } };
+let hoverN = 0;
+$('tree').onmousemove = e => { const d = e.target.closest('.nd[data-n]'); const id = d ? +d.dataset.n : 0; if (id === hoverN) return; hoverN = id; if (id) cdp('Overlay.highlightNode', { highlightConfig: HL, nodeId: id }).catch(() => {}); else cdp('Overlay.hideHighlight').catch(() => {}); };
+$('tree').onmouseleave = () => { hoverN = 0; cdp('Overlay.hideHighlight').catch(() => {}); };
+$('crumbs').onclick = e => { const s = e.target.closest('[data-n]'); if (s) select(+s.dataset.n, true); };
+$('crumbs').onmouseover = e => { const s = e.target.closest('[data-n]'); if (s) cdp('Overlay.highlightNode', { highlightConfig: HL, nodeId: +s.dataset.n }).catch(() => {}); };
+$('crumbs').onmouseleave = () => cdp('Overlay.hideHighlight').catch(() => {});
+$('tree-wrap').onkeydown = e => {
+  const dm = st().dom; if (!dm || !dm.sel) return;
+  const i = flat.indexOf(dm.sel), n = dm.nodes.get(dm.sel);
+  if (e.key === 'ArrowDown' && i < flat.length - 1) { e.preventDefault(); select(flat[i + 1], true); }
+  else if (e.key === 'ArrowUp' && i > 0) { e.preventDefault(); select(flat[i - 1], true); }
+  else if (e.key === 'ArrowRight' && hasKids(n)) { e.preventDefault(); if (!dm.open.has(n.nodeId)) { openNode(dm, n); renderTree(); } else select(flat[i + 1], true); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); if (dm.open.has(n.nodeId)) { dm.open.delete(n.nodeId); renderTree(); } else if (dm.parent.get(n.nodeId)) select(dm.parent.get(n.nodeId), true); }
+  else if (e.key === 'Delete') { e.preventDefault(); nodeAct('del'); }
+  else if (e.key === 'h') { e.preventDefault(); nodeAct('hide'); }
+};
+$('elrf').onclick = loadDoc;
+// Search: DOM.performSearch understands plain text, CSS selectors and XPath.
+let srch = null;
+$('elq').onkeydown = async e => {
+  if (e.key !== 'Enter') return;
+  const q = $('elq').value.trim(); if (!q) return;
+  if (!srch || srch.q !== q || srch.tab !== tab) {
+    if (srch) cdp('DOM.discardSearchResults', { searchId: srch.id }).catch(() => {});
+    if (!st().dom) await loadDoc();
+    const r = await cdp('DOM.performSearch', { query: q, includeUserAgentShadowDOM: false }).catch(() => null);
+    if (!r) return;
+    srch = { q, tab, id: r.searchId, n: r.resultCount, i: -1 };
+  }
+  if (!srch.n) { $('elqn').textContent = 'No matches'; return; }
+  srch.i = (srch.i + (e.shiftKey ? -1 : 1) + srch.n) % srch.n;
+  $('elqn').textContent = `${srch.i + 1} of ${srch.n}`;
+  const r = await cdp('DOM.getSearchResults', { searchId: srch.id, fromIndex: srch.i, toIndex: srch.i + 1 }).catch(() => null);
+  if (r?.nodeIds?.[0]) reveal(r.nodeIds[0]);
+};
+async function reveal(nodeId) {
+  for (let k = 0; k < 20; k++) {
+    const dm = st().dom;
+    if (dm?.nodes.has(nodeId)) {
+      let id = nodeId; while (dm.parent.get(id)) id = dm.parent.get(id);
+      if (id === dm.root.nodeId) { if (pane !== 'el') show('el'); select(nodeId, true); return; }
+    }
+    await new Promise(r => setTimeout(r, 50));
+  }
+}
+async function revealObject(objectId) {
+  if (!st().dom) await loadDoc();
+  const r = await cdp('DOM.requestNode', { objectId }).catch(() => null);
+  if (r?.nodeId) reveal(r.nodeId);
+}
+// Element picker: Chromium draws the hover overlay; we get the clicked node back.
+let picking = false;
+async function pick(on) {
+  picking = on ?? !picking;
+  $('pick').classList.toggle('on', picking);
+  if (picking && !st().dom) await loadDoc();
+  cdp('Overlay.setInspectMode', { mode: picking ? 'searchForNode' : 'none', highlightConfig: HL }).catch(() => {});
+}
+$('pick').onclick = () => pick();
+H['Overlay.inspectNodeRequested'] = async (p, s, cur) => {
+  if (!cur) return;
+  pick(false);
+  if (!s.dom) await loadDoc();
+  const r = await cdp('DOM.pushNodesByBackendIdsToFrontend', { backendNodeIds: [p.backendNodeId] }).catch(() => null);
+  if (r?.nodeIds?.[0]) { show('el'); reveal(r.nodeIds[0]); }
+};
+H['Overlay.inspectModeCanceled'] = (p, s, cur) => { if (cur) { picking = false; $('pick').classList.remove('on'); } };
+
+let stab = store('yw-dev-stab', 'styles');
+async function sideDraw() {
+  const box = $('elside'), dm = st().dom, id = dm?.sel, n = id && dm.nodes.get(id);
+  if (!n || n.nodeType !== 1) { box.innerHTML = '<div class="empty">Select an element to see its styles.</div>'; return; }
+  const tabs = [['styles', 'Styles'], ['computed', 'Computed'], ['box', 'Box model'], ['attrs', 'Attributes']];
+  box.innerHTML = `<div class="acts"><button class="tb" data-a="html">Edit as HTML</button><button class="tb" data-a="copy">Copy HTML</button><button class="tb" data-a="sel">Copy selector</button><button class="tb" data-a="scroll">Scroll to</button><button class="tb" data-a="hide">Hide</button><button class="tb" data-a="con">Use in console</button><button class="tb warn" data-a="del">Delete</button></div>
+    <div class="chips" style="padding:6px 8px;border-bottom:1px solid var(--line2)">${tabs.map(([k, l]) => `<button data-st="${k}" class="${k === stab ? 'on' : ''}">${l}</button>`).join('')}</div><div id="sbody"><div class="empty">Loading…</div></div>`;
+  const b = $('sbody');
+  if (stab === 'computed') {
+    const r = await cdp('CSS.getComputedStyleForNode', { nodeId: id }).catch(() => null);
+    if (!r || dm.sel !== id) return;
+    b.innerHTML = `<div class="bar"><input class="q" id="cpq" type="search" placeholder="Filter properties"></div><div class="kv" id="cpl"></div>`;
+    const draw = () => { const q = $('cpq').value.trim().toLowerCase(); $('cpl').innerHTML = r.computedStyle.filter(p => !q || p.name.includes(q) || p.value.toLowerCase().includes(q)).sort((a, z) => a.name.localeCompare(z.name)).map(p => `<b>${esc(p.name)}</b><span>${esc(p.value)}</span>`).join(''); };
+    $('cpq').oninput = draw; draw();
+  } else if (stab === 'box') {
+    const r = await cdp('DOM.getBoxModel', { nodeId: id }).catch(() => null);
+    if (dm.sel !== id) return;
+    if (!r) { b.innerHTML = '<div class="empty">This element isn\'t rendered.</div>'; return; }
+    const m = r.model, side = (o, i) => [o[1] - i[1], o[2] - i[2], o[5] - i[5], o[0] - i[0]].map(v => Math.round(Math.abs(v) * 100) / 100 || '–');
+    const [mt, mr, mb, ml] = side(m.margin, m.border), [bt, br, bb, bl] = side(m.border, m.padding), [pt, pr, pb, pl] = side(m.padding, m.content);
+    const cw = Math.round((m.content[2] - m.content[0]) * 100) / 100, ch = Math.round((m.content[5] - m.content[1]) * 100) / 100;
+    const ring = (cls, name, t, r_, b_, l, inner) => `<div class="${cls}"><i>${name}</i><s class="t">${t}</s><s class="ri">${r_}</s><s class="bo">${b_}</s><s class="le">${l}</s>${inner}</div>`;
+    b.innerHTML = `<div class="box mono">${ring('m', 'margin', mt, mr, mb, ml, ring('b', 'border', bt, br, bb, bl, ring('p', 'padding', pt, pr, pb, pl, `<div class="c">${cw} × ${ch}</div>`)))}</div>
+      <div class="kv"><b>Rendered size</b><span>${m.width} × ${m.height}</span><b>Position</b><span>${Math.round(m.border[0])}, ${Math.round(m.border[1])}</span></div>`;
+  } else if (stab === 'attrs') {
+    const a = n.attributes || [];
+    let rows = ''; for (let i = 0; i < a.length; i += 2) rows += `<div class="row"><input class="mono" value="${esc(a[i])}" data-old="${esc(a[i])}" data-k><input class="mono" value="${esc(a[i + 1])}" data-v="${esc(a[i])}"></div>`;
+    b.innerHTML = `<div class="attrs" style="padding:6px 0">${rows}<div class="row"><input class="mono" placeholder="new attribute" id="nak"><input class="mono" placeholder="value" id="nav"></div><div class="row" style="color:var(--dim)">Press Enter to apply. Clear a name to remove the attribute.</div></div>`;
+    b.querySelectorAll('input').forEach(inp => inp.onkeydown = async e => {
+      if (e.key !== 'Enter') return;
+      const row = inp.parentElement, [k, v] = row.querySelectorAll('input');
+      if (k.id === 'nak') { if (k.value.trim()) await cdp('DOM.setAttributeValue', { nodeId: id, name: k.value.trim(), value: v.value }).catch(err => alert(err)); }
+      else if (!k.value.trim()) await cdp('DOM.removeAttribute', { nodeId: id, name: k.dataset.old });
+      else {
+        if (k.value !== k.dataset.old) await cdp('DOM.removeAttribute', { nodeId: id, name: k.dataset.old });
+        await cdp('DOM.setAttributeValue', { nodeId: id, name: k.value.trim(), value: v.value }).catch(err => alert(err));
+      }
+      setTimeout(sideDraw, 60);
+    });
+  } else {
+    const r = await cdp('CSS.getMatchedStylesForNode', { nodeId: id }).catch(() => null);
+    if (!r || dm.sel !== id) return;
+    const seen = new Set(), blocks = [];
+    const propLine = p => { const over = seen.has(p.name) && !p.important; seen.add(p.name); return `<div class="pr${over ? ' over' : ''}${p.disabled ? ' over' : ''}"><span class="an">${esc(p.name)}</span>: <span>${esc(p.value)}</span>${p.important ? ' <b>!important</b>' : ''};</div>`; };
+    const live = s => (s.cssProperties || []).filter(p => p.text || p.range);
+    blocks.push(`<div class="rule" data-inline><span class="sel">element.style</span> {<div class="body">${live(r.inlineStyle || {}).map(propLine).join('')}</div>}</div>`);
+    const rules = [...(r.matchedCSSRules || [])].reverse();
+    rules.forEach((m, i) => {
+      const ru = m.rule, ua = ru.origin === 'user-agent', sels = ru.selectorList.selectors.map((s, j) => m.matchingSelectors.includes(j) ? `<span class="sel">${esc(s.text)}</span>` : `<span class="u">${esc(s.text)}</span>`).join(', ');
+      const media = (ru.media || []).map(q => `<div class="u">@media ${esc(q.text)}</div>`).join('');
+      blocks.push(`<div class="rule mono${ua ? ' ua' : ''}" data-r="${i}">${media}<span class="src">${ua ? 'user agent' : esc(shortUrl(ru.origin === 'inspector' ? 'inspector' : (r.cssStyleSheets?.find?.(x => x.styleSheetId === ru.styleSheetId)?.sourceURL) || ''))}</span>${sels} {<div class="body">${live(ru.style).map(propLine).join('')}</div>}</div>`);
+    });
+    for (const inh of r.inherited || []) {
+      const rl = (inh.matchedCSSRules || []).filter(m => m.rule.origin !== 'user-agent').reverse();
+      if (!rl.length) continue;
+      blocks.push(`<h4>Inherited</h4>`);
+      for (const m of rl) blocks.push(`<div class="rule mono"><span class="sel">${esc(m.rule.selectorList.text)}</span> {<div class="body">${live(m.rule.style).filter(p => INHERITS.test(p.name)).map(propLine).join('')}</div>}</div>`);
+    }
+    b.innerHTML = `<div class="mono" style="padding:8px 0">${blocks.join('')}</div><div class="u" style="padding:0 10px 10px">Click a rule to edit it.</div>`;
+    b.querySelectorAll('.rule[data-r],.rule[data-inline]').forEach(div => div.onclick = e => {
+      if (div.querySelector('textarea')) return;
+      const inline = div.hasAttribute('data-inline'), ru = inline ? null : rules[+div.dataset.r].rule;
+      if (ru && (ru.origin === 'user-agent' || !ru.style.range)) return;
+      const ta = el('textarea', 'mono');
+      ta.value = inline ? (attr(n, 'style') || '').split(';').map(x => x.trim()).filter(Boolean).join(';\n') + (attr(n, 'style') ? ';' : '') : (ru.style.cssText || '').trim().replace(/;\s*/g, ';\n');
+      div.querySelector('.body').replaceWith(ta); ta.focus();
+      const save = async () => {
+        const txt = ta.value.replace(/\n/g, ' ').trim();
+        if (inline) await cdp('DOM.setAttributeValue', { nodeId: id, name: 'style', value: txt }).catch(() => {});
+        else await cdp('CSS.setStyleTexts', { edits: [{ styleSheetId: ru.styleSheetId, range: ru.style.range, text: ' ' + txt + ' ' }] }).catch(err => alert('Couldn\'t edit this rule: ' + err));
+        sideDraw();
+      };
+      ta.onkeydown = e => { if (e.key === 'Enter' && (e.ctrlKey || !e.shiftKey)) { e.preventDefault(); save(); } else if (e.key === 'Escape') sideDraw(); };
+      ta.onblur = save;
+    });
+  }
+}
+const INHERITS = /^(color|font|font-.*|line-height|letter-spacing|word-spacing|text-(align|indent|transform|shadow)|white-space|visibility|cursor|direction|list-style.*|quotes|--.*)$/;
+$('elside').onclick = e => {
+  const t = e.target.closest('[data-st]'); if (t) { stab = t.dataset.st; keep('yw-dev-stab', stab); sideDraw(); return; }
+  const a = e.target.closest('[data-a]'); if (a) nodeAct(a.dataset.a, a);
+};
+async function nodeAct(a, btn) {
+  const dm = st().dom, id = dm?.sel; if (!id) return;
+  const done = t => { if (btn) { const o = btn.textContent; btn.textContent = t; setTimeout(() => { btn.textContent = o; }, 900); } };
+  if (a === 'del') { const p = dm.parent.get(id), i = flat.indexOf(id); await cdp('DOM.removeNode', { nodeId: id }).catch(() => {}); dm.sel = flat[i + 1] && dm.nodes.has(flat[i + 1]) ? flat[i + 1] : p; select(dm.sel); }
+  else if (a === 'copy') { const r = await cdp('DOM.getOuterHTML', { nodeId: id }).catch(() => null); if (r) { copy(r.outerHTML); done('Copied'); } }
+  else if (a === 'sel') { copy(cssPath(dm, id)); done('Copied'); }
+  else if (a === 'scroll') cdp('DOM.scrollIntoViewIfNeeded', { nodeId: id }).catch(() => {});
+  else if (a === 'hide') {
+    const s = attr(dm.nodes.get(id), 'style') || '', on = /visibility:\s*hidden\s*!important/.test(s);
+    cdp('DOM.setAttributeValue', { nodeId: id, name: 'style', value: on ? s.replace(/;?\s*visibility:\s*hidden\s*!important/, '') : (s && !s.trim().endsWith(';') ? s + ';' : s) + 'visibility:hidden !important' }).catch(() => {});
+  } else if (a === 'con') {
+    const r = await cdp('DOM.resolveNode', { nodeId: id }).catch(() => null);
+    if (!r) return;
+    st().tmp = (st().tmp || 0) + 1;
+    const name = 'temp' + st().tmp;
+    await cdp('Runtime.callFunctionOn', { objectId: r.object.objectId, functionDeclaration: `function(){globalThis[${JSON.stringify(name)}]=this}` }).catch(() => {});
+    show('con'); addLog(st(), { level: 'log', note: `Stored as ${name} (also $0)` }, true); rin.value = name; grow(); eager();
+  } else if (a === 'html') {
+    const r = await cdp('DOM.getOuterHTML', { nodeId: id }).catch(() => null); if (!r) return;
+    const b = $('sbody'); b.innerHTML = '<div style="padding:8px 10px"><textarea class="mono" id="oh" style="width:100%;height:220px;padding:6px;border:1px solid var(--acc);border-radius:6px;background:var(--surface)"></textarea><div style="display:flex;gap:6px;margin-top:6px"><button class="tb" id="ohs">Apply (Ctrl+Enter)</button><button class="tb" id="ohc">Cancel</button></div></div>';
+    $('oh').value = r.outerHTML; $('oh').focus();
+    const save = async () => { await cdp('DOM.setOuterHTML', { nodeId: id, outerHTML: $('oh').value }).catch(err => alert(err)); setTimeout(loadDoc, 100); };
+    $('ohs').onclick = save; $('ohc').onclick = sideDraw;
+    $('oh').onkeydown = e => { if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); save(); } };
+  }
+}
+
+// ---------- Storage ----------
+let stoData = null;
+async function stoLoad() {
+  const id = tab;
+  const [kv, ck] = await Promise.all([
+    evalv(`(()=>{const g=s=>{try{return Object.entries(s)}catch{return null}};return{origin:location.origin,local:g(localStorage),session:g(sessionStorage)}})()`).catch(() => null),
+    cdp('Network.getCookies').then(r => r.cookies).catch(() => []),
+  ]);
+  if (id !== tab) return;
+  stoData = { ...(kv || { origin: '', local: null, session: null }), cookies: ck };
+  stoDraw();
+}
+function stoDraw() {
+  const d = stoData; if (!d) return;
+  $('sorigin').textContent = d.origin;
+  const q = $('sq').value.trim().toLowerCase(), m = (...s) => !q || s.some(x => String(x).toLowerCase().includes(q));
+  const kvTable = (kind, title, rows) => {
+    if (!rows) return `<div class="gh">${title}<small>not available here</small></div>`;
+    const list = rows.filter(([k, v]) => m(k, v));
+    return `<div class="gh">${title}<small>${rows.length} item${rows.length === 1 ? '' : 's'}</small><span class="sp"></span><button class="tb" data-add="${kind}">Add</button>${rows.length ? `<button class="tb warn" data-clr="${kind}">Clear</button>` : ''}</div>
+      <table class="grid"><colgroup><col style="width:30%"><col><col style="width:34px"></colgroup><tr><th>Key</th><th>Value</th><th></th></tr>${list.map(([k, v]) => `<tr><td title="${esc(k)}">${esc(k)}</td><td class="v" data-kind="${kind}" data-k="${esc(k)}" title="Click to edit">${esc(v.slice(0, 500))}</td><td><button class="x" data-del="${kind}" data-k="${esc(k)}">${icon('x')}</button></td></tr>`).join('')}</table>`;
+  };
+  const cl = d.cookies.filter(c => m(c.name, c.value, c.domain));
+  $('sto').innerHTML = kvTable('local', 'Local storage', d.local) + kvTable('session', 'Session storage', d.session) +
+    `<div class="gh">Cookies<small>${d.cookies.length} for this page</small><span class="sp"></span>${d.cookies.length ? '<button class="tb warn" data-clr="cookies">Clear</button>' : ''}</div>
+    <table class="grid"><colgroup><col style="width:18%"><col><col style="width:16%"><col style="width:8%"><col style="width:13%"><col style="width:60px"><col style="width:34px"></colgroup><tr><th>Name</th><th>Value</th><th>Domain</th><th>Path</th><th>Expires</th><th>Flags</th><th></th></tr>
+    ${cl.map((c, i) => `<tr><td title="${esc(c.name)}">${esc(c.name)}</td><td class="v" data-ck="${d.cookies.indexOf(c)}" title="Click to edit">${esc(c.value)}</td><td>${esc(c.domain)}</td><td>${esc(c.path)}</td><td>${c.session ? 'Session' : esc(new Date(c.expires * 1000).toLocaleString())}</td><td>${[c.httpOnly && 'H', c.secure && 'S', c.sameSite && c.sameSite[0]].filter(Boolean).join(' ')}</td><td><button class="x" data-dck="${d.cookies.indexOf(c)}">${icon('x')}</button></td></tr>`).join('')}</table>`;
+}
+const stoJs = (kind, code) => evalv(`(()=>{const s=${kind === 'local' ? 'localStorage' : 'sessionStorage'};${code}})()`);
+$('sto').onclick = async e => {
+  const t = e.target.closest('button, td.v'); if (!t || !stoData) return;
+  const ds = t.dataset;
+  if (ds.del) { await stoJs(ds.del, `s.removeItem(${JSON.stringify(ds.k)})`); stoLoad(); }
+  else if (ds.clr === 'cookies') { for (const c of stoData.cookies) await cdp('Network.deleteCookies', { name: c.name, domain: c.domain, path: c.path }).catch(() => {}); stoLoad(); }
+  else if (ds.clr) { if (confirm('Clear all ' + ds.clr + ' storage for this site?')) { await stoJs(ds.clr, 's.clear()'); stoLoad(); } }
+  else if (ds.add) { const k = prompt('Key'); if (k == null || !k) return; const v = prompt('Value', '') ?? ''; await stoJs(ds.add, `s.setItem(${JSON.stringify(k)},${JSON.stringify(v)})`); stoLoad(); }
+  else if (ds.dck) { const c = stoData.cookies[+ds.dck]; await cdp('Network.deleteCookies', { name: c.name, domain: c.domain, path: c.path }).catch(() => {}); stoLoad(); }
+  else if (t.matches('td.v') && !t.querySelector('textarea')) {
+    const ck = ds.ck != null ? stoData.cookies[+ds.ck] : null;
+    const full = ck ? ck.value : (stoData[ds.kind].find(([k]) => k === ds.k) || [])[1] || '';
+    const ta = el('textarea'); ta.value = full; t.textContent = ''; t.append(ta); ta.focus();
+    const save = async () => {
+      if (ck) await cdp('Network.setCookie', { name: ck.name, value: ta.value, domain: ck.domain, path: ck.path, secure: ck.secure, httpOnly: ck.httpOnly, sameSite: ck.sameSite, expires: ck.session ? undefined : ck.expires }).catch(() => {});
+      else await stoJs(ds.kind, `s.setItem(${JSON.stringify(ds.k)},${JSON.stringify(ta.value)})`);
+      stoLoad();
+    };
+    ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ta.onblur = null; save(); } else if (e.key === 'Escape') { ta.onblur = null; stoDraw(); } };
+    ta.onblur = save;
+  }
+};
+$('sq').oninput = later(stoDraw, 100);
+$('srf').onclick = stoLoad;
+$('sclear').onclick = async () => {
+  const o = stoData?.origin; if (!o || !confirm(`Delete cookies, storage, cache and service workers for ${o}?`)) return;
+  await cdp('Storage.clearDataForOrigin', { origin: o, storageTypes: 'all' }).catch(() => {});
+  for (const c of stoData.cookies) await cdp('Network.deleteCookies', { name: c.name, domain: c.domain, path: c.path }).catch(() => {});
+  stoLoad();
+};
+
+// ---------- Performance ----------
+const VITALS = `new Promise(res=>{const o={};const nav=performance.getEntriesByType('navigation')[0];if(nav){o.ttfb=nav.responseStart;o.dcl=nav.domContentLoadedEventEnd;o.load=nav.loadEventEnd;o.size=nav.transferSize}
+o.fcp=performance.getEntriesByName('first-contentful-paint')[0]?.startTime;o.res=performance.getEntriesByType('resource').length;
+try{new PerformanceObserver(l=>{const e=l.getEntries();if(e.length)o.lcp=e[e.length-1].startTime}).observe({type:'largest-contentful-paint',buffered:true})}catch{}
+try{let c=0;new PerformanceObserver(l=>{for(const e of l.getEntries())if(!e.hadRecentInput)c+=e.value;o.cls=c}).observe({type:'layout-shift',buffered:true})}catch{}
+try{let m=0;new PerformanceObserver(l=>{for(const e of l.getEntries())m=Math.max(m,e.duration);o.inp=m}).observe({type:'event',buffered:true,durationThreshold:16})}catch{}
+setTimeout(()=>res(o),60)})`;
+const rate = (v, good, poor) => v == null ? '' : v <= good ? 'good' : v <= poor ? 'mid' : 'bad';
+let perfT = 0;
+async function perfTick(first) {
+  clearTimeout(perfT);
+  if (pane !== 'perf') return;
+  const s = st(), id = tab;
+  const r = await cdp('Performance.getMetrics').catch(() => null);
+  if (id !== tab) return;
+  if (r) {
+    const m = Object.fromEntries(r.metrics.map(x => [x.name, x.value]));
+    s.heap.push(m.JSHeapUsedSize || 0); if (s.heap.length > 120) s.heap.shift();
+    const tiles = [['JS heap', fmtB(m.JSHeapUsedSize), 'of ' + fmtB(m.JSHeapTotalSize)], ['DOM nodes', (m.Nodes || 0).toLocaleString(), (m.Documents || 0) + ' documents · ' + (m.Frames || 0) + ' frames'],
+      ['Event listeners', (m.JSEventListeners || 0).toLocaleString(), ''], ['Layouts', (m.LayoutCount || 0).toLocaleString(), fmtMs((m.LayoutDuration || 0) * 1000) + ' total'],
+      ['Style recalcs', (m.RecalcStyleCount || 0).toLocaleString(), fmtMs((m.RecalcStyleDuration || 0) * 1000) + ' total'], ['Script time', fmtMs((m.ScriptDuration || 0) * 1000), 'tasks ' + fmtMs((m.TaskDuration || 0) * 1000)]];
+    $('metrics').innerHTML = tiles.map(([a, b, c]) => `<div class="tile"><small>${a}</small><b>${b}</b><em>${c}</em></div>`).join('');
+    const cv = $('heap'), w = cv.parentElement.clientWidth; cv.width = w * devicePixelRatio; cv.height = 60 * devicePixelRatio; cv.style.width = w + 'px'; cv.style.height = '60px';
+    const g = cv.getContext('2d'), max = Math.max(...s.heap, 1), H_ = cv.height;
+    g.clearRect(0, 0, cv.width, H_); g.beginPath();
+    s.heap.forEach((v, i) => { const x = i / 119 * cv.width, y = H_ - v / max * (H_ - 6) - 3; i ? g.lineTo(x, y) : g.moveTo(x, y); });
+    g.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--acc').trim(); g.lineWidth = 2 * devicePixelRatio; g.stroke();
+    g.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--dim').trim(); g.font = `${10 * devicePixelRatio}px Segoe UI`; g.fillText('JS heap, last 2 minutes · peak ' + fmtB(max), 4 * devicePixelRatio, 12 * devicePixelRatio);
+  }
+  if (first || !(s.vt > Date.now() - 3000)) {
+    s.vt = Date.now();
+    const v = await evalv(VITALS).catch(() => null);
+    if (v && id === tab) {
+      const t = [['LCP', fmtMs(v.lcp), rate(v.lcp, 2500, 4000), 'Largest paint'], ['CLS', v.cls == null ? '' : v.cls.toFixed(3), rate(v.cls, 0.1, 0.25), 'Layout shift'], ['INP (approx.)', fmtMs(v.inp), rate(v.inp, 200, 500), 'Slowest interaction'],
+        ['FCP', fmtMs(v.fcp), rate(v.fcp, 1800, 3000), 'First paint'], ['TTFB', fmtMs(v.ttfb), rate(v.ttfb, 800, 1800), 'Server response'], ['Load', fmtMs(v.load), '', 'DOMContentLoaded ' + fmtMs(v.dcl)], ['Requests', String(v.res ?? ''), '', fmtB(v.size) + ' document']];
+      $('vitals').innerHTML = t.map(([a, b, c, d]) => `<div class="tile ${c}"><small>${a}</small><b>${b || '–'}</b><em>${d}</em></div>`).join('');
+    }
+  }
+  perfT = setTimeout(perfTick, 1000);
+}
+document.querySelectorAll('[data-ov]').forEach(c => c.onchange = () => { (st().ov ||= {})[c.dataset.ov] = c.checked; cdp('Overlay.' + c.dataset.ov, { show: c.checked }); });
+$('cpu').onchange = () => { st().cpu = +$('cpu').value; cdp('Emulation.setCPUThrottlingRate', { rate: +$('cpu').value }); emuBadge(); };
+
+// ---------- Emulation ----------
+const UA = {
+  iphone: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1',
+  ipad: 'Mozilla/5.0 (iPad; CPU OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1',
+  android: 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36',
+  mac: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15',
+  bot: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+};
+const DEV = {
+  '': ['No device (real window)'], custom: ['Custom size'],
+  se: ['iPhone SE', 375, 667, 2, 'iphone'], ip15: ['iPhone 15 Pro', 393, 852, 3, 'iphone'], ip15m: ['iPhone 15 Pro Max', 430, 932, 3, 'iphone'],
+  px9: ['Pixel 9', 412, 915, 2.625, 'android'], s24: ['Galaxy S24', 360, 780, 3, 'android'], fold: ['Galaxy Z Fold (open)', 673, 841, 2.625, 'android'],
+  ipm: ['iPad Mini', 768, 1024, 2, 'ipad'], ipp: ['iPad Pro 12.9"', 1024, 1366, 2, 'ipad'], lap: ['Laptop 1366', 1366, 768, 1], hd: ['Desktop 1920', 1920, 1080, 1],
+};
+const emuActive = e => !!(e.dev || e.ua || e.scheme || e.motion || e.contrast || e.forced || e.media || e.vision || e.nojs || e.geo || e.tz || e.locale || e.touch);
+const emuBadge = () => { const s = st(); $('emuon').hidden = !(emuActive(s.emu) || (s.cpu > 1) || s.thr); };
+function emuForm() {
+  const e = st().emu, sel = $('emu').querySelector('[data-e=dev]');
+  if (!sel.options.length) sel.innerHTML = Object.entries(DEV).map(([k, [n]]) => `<option value="${k}">${esc(n)}</option>`).join('');
+  const d = DEV[e.dev];
+  const def = { w: d?.[1] ?? 400, h: d?.[2] ?? 800, dpr: d?.[3] ?? 1 };
+  for (const x of $('emu').querySelectorAll('[data-e]')) {
+    const k = x.dataset.e, v = e[k] ?? def[k] ?? '';
+    if (x.type === 'checkbox') x.checked = !!v; else x.value = v;
+    if (k === 'w' || k === 'h' || k === 'dpr') x.disabled = e.dev !== 'custom';
+  }
+  $('ncache').checked = !!st().nocache; $('nthr').value = st().thr || ''; $('cpu').value = st().cpu || 1;
+  document.querySelectorAll('[data-ov]').forEach(c => { c.checked = !!st().ov?.[c.dataset.ov]; });
+  emuBadge();
+}
+$('emu').onchange = e => {
+  const x = e.target.closest('[data-e]'); if (!x) return;
+  const em = st().emu, k = x.dataset.e;
+  em[k] = x.type === 'checkbox' ? x.checked : x.type === 'number' ? +x.value : x.value;
+  if (k === 'dev') { const d = DEV[x.value]; delete em.w; delete em.h; delete em.dpr; em.touch = !!d?.[4] && d[4] !== 'mac'; if (em.ua === undefined || em.ua === 'auto' || em.ua === '') em.ua = d?.[4] ? 'auto' : ''; }
+  emuApply(); emuForm();
+};
+async function emuApply() {
+  const s = st(), e = s.emu, d = DEV[e.dev], c = (m, p) => cdp(m, p).catch(err => console.warn(m, err));
+  if (e.dev) {
+    let w = e.dev === 'custom' ? e.w || 400 : d[1], h = e.dev === 'custom' ? e.h || 800 : d[2];
+    if (e.rot) [w, h] = [h, w];
+    const mobile = !!d?.[4];
+    await c('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: e.dev === 'custom' ? e.dpr || 1 : d[3], mobile, screenOrientation: mobile ? { type: e.rot ? 'landscapePrimary' : 'portraitPrimary', angle: e.rot ? 90 : 0 } : undefined });
+  } else await c('Emulation.clearDeviceMetricsOverride', {});
+  await c('Emulation.setTouchEmulationEnabled', { enabled: !!e.touch, maxTouchPoints: 5 });
+  await c('Emulation.setEmitTouchEventsForMouse', { enabled: !!e.touch, configuration: 'mobile' });
+  const uaKey = e.ua === 'auto' ? d?.[4] : e.ua;
+  if (uaKey && UA[uaKey]) { s.ua0 ||= await evalv('navigator.userAgent'); await c('Emulation.setUserAgentOverride', { userAgent: UA[uaKey] }); }
+  else if (s.ua0) { await c('Emulation.setUserAgentOverride', { userAgent: s.ua0 }); }
+  await c('Emulation.setEmulatedMedia', { media: e.media || '', features: [['prefers-color-scheme', e.scheme], ['prefers-reduced-motion', e.motion], ['prefers-contrast', e.contrast], ['forced-colors', e.forced]].map(([name, value]) => ({ name, value: value || '' })) });
+  await c('Emulation.setEmulatedVisionDeficiency', { type: e.vision || 'none' });
+  await c('Emulation.setScriptExecutionDisabled', { value: !!e.nojs });
+  if (e.geo) { const [latitude, longitude] = e.geo.split(',').map(Number); await c('Emulation.setGeolocationOverride', { latitude, longitude, accuracy: 30 }); } else await c('Emulation.clearGeolocationOverride', {});
+  await c('Emulation.setTimezoneOverride', { timezoneId: e.tz || '' });
+  await c('Emulation.setLocaleOverride', { locale: e.locale || '' });
+  emuBadge();
+}
+$('ereset').onclick = async () => {
+  const s = st(); s.emu = {}; s.cpu = 1; s.thr = ''; s.nocache = false;
+  await emuApply();
+  cdp('Emulation.setCPUThrottlingRate', { rate: 1 }).catch(() => {});
+  cdp('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 }).catch(() => {});
+  cdp('Network.setCacheDisabled', { cacheDisabled: false }).catch(() => {});
+  for (const k of Object.keys(s.ov || {})) cdp('Overlay.' + k, { show: false }).catch(() => {});
+  s.ov = {};
+  emuForm();
+};
+$('emuon').onclick = () => show('emu');
+$('emuon').style.cursor = 'pointer';
+
+invoke('dev_tab').then(async ([id, what, d]) => { setDock(d); await setTab(id); go(what); });
+</script>
+</body>
+</html>

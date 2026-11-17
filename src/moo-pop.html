@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+:root {
+  --meadow: #3f6b2e;
+  --meadow-dark: #2b4a1f;
+  --grass: #dfe9cf;
+  --tag: #f2c230;
+  --tag-edge: #c99a12;
+  --ink: #1a1816;
+  --soft: #5a5f4f;
+  font-family: ui-rounded, "SF Pro Rounded", "Nunito", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; overflow-y: auto; background: var(--grass); color: var(--ink); }
+main { padding: 14px 18px 12px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+.tag {
+  position: relative; margin: 0 auto 10px; width: 184px; padding: 26px 12px 9px;
+  background: var(--tag); border: 2px solid var(--tag-edge);
+  border-radius: 92px 92px 16px 16px;
+  text-align: center; box-shadow: inset 0 -3px 0 rgba(0,0,0,.08), 0 3px 0 var(--meadow-dark);
+  transform: rotate(-3deg);
+}
+.hole {
+  position: absolute; top: 7px; left: 50%; width: 13px; height: 13px; margin-left: -6.5px;
+  border-radius: 50%; background: var(--grass); border: 2px solid var(--tag-edge);
+}
+#name {
+  width: 100%; border: 0; background: transparent; text-align: center;
+  font-family: inherit; font-weight: 800; font-size: 22px; line-height: 1.1; color: var(--ink);
+  padding: 1px 0; border-bottom: 2px dashed transparent; outline: none;
+}
+#name:hover { border-bottom-color: rgba(0,0,0,.18); }
+#name:focus-visible { border-bottom-color: var(--ink); }
+.no { display: block; margin-top: 3px; font-size: 11.5px; font-weight: 700; color: rgba(0,0,0,.55); font-variant-numeric: tabular-nums; }
+
+.breeds { margin-bottom: 9px; }
+.breed-head { display: flex; justify-content: space-between; font-size: 13px; margin: 0 2px 6px; }
+.breed-name { font-weight: 700; }
+.swatches { display: flex; justify-content: space-between; }
+.sw {
+  width: 44px; height: 30px; border-radius: 15px; cursor: pointer; padding: 0;
+  border: 2px solid rgba(0,0,0,.12); box-shadow: inset 0 -3px 0 rgba(0,0,0,.12);
+  transition: transform .12s;
+}
+.sw:hover { transform: translateY(-1px); }
+.sw[aria-checked="true"] { border-color: var(--ink); box-shadow: inset 0 -3px 0 rgba(0,0,0,.12), 0 0 0 2px var(--grass), 0 0 0 4px var(--ink); }
+.sw-holstein { background:
+  radial-gradient(circle at 30% 40%, #1d1a18 0 6px, transparent 6.5px),
+  radial-gradient(circle at 72% 62%, #1d1a18 0 5px, transparent 5.5px), #f6f2ea; }
+.sw-jersey { background: linear-gradient(#e2b47c, #b97f47); }
+.sw-hereford { background: linear-gradient(90deg, #a8472a 0 62%, #f4efe6 62%); }
+.sw-angus { background: linear-gradient(#3d3735, #141212); }
+.sw-highland { background: repeating-linear-gradient(100deg, #d98a4a 0 4px, #b8682e 4px 7px); }
+
+.controls { background: #fff; border-radius: 12px; padding: 2px 12px; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 37px; font-size: 14px; }
+.chips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px 0; border-top: 1px solid #edf0e6; border-bottom: 1px solid #edf0e6; }
+.chip { display: flex; align-items: center; gap: 7px; padding: 6px 8px; border-radius: 9px; background: #f1f4ec; font-size: 13px; cursor: pointer; }
+.chip input { appearance: none; margin: 0; width: 16px; height: 16px; border-radius: 5px; border: 2px solid #b9bfae; background: #fff; flex: none; display: grid; place-content: center; cursor: pointer; }
+.chip input::after { content: ""; width: 8px; height: 4px; border: solid #fff; border-width: 0 0 2px 2px; transform: rotate(-45deg) translate(1px,-1px); opacity: 0; }
+.chip input:checked { background: var(--meadow); border-color: var(--meadow); }
+.chip input:checked::after { opacity: 1; }
+.chip:has(input:checked) { background: #e3eed9; }
+.chip input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.switch {
+  appearance: none; width: 36px; height: 21px; border-radius: 21px; background: #c9cdbf;
+  position: relative; cursor: pointer; transition: background .2s; margin: 0; flex: none;
+}
+.switch::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 15px; height: 15px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .2s;
+}
+.switch:checked { background: var(--meadow); }
+.switch:checked::after { transform: translateX(15px); }
+.switch:focus-visible, .seg button:focus-visible, .btn:focus-visible, .sw:focus-visible, .sitebtn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.seg { display: flex; background: #eef1e8; border-radius: 9px; padding: 2px; }
+.seg button {
+  border: 0; background: transparent; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--soft);
+  padding: 4px 8px; border-radius: 7px; cursor: pointer;
+}
+.seg button[aria-checked="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+
+.actions { display: flex; gap: 8px; margin-top: 10px; }
+.btn {
+  flex: 1; border: 2px solid var(--meadow); background: transparent; color: var(--meadow-dark);
+  font: inherit; font-weight: 700; font-size: 13.5px; padding: 8px; border-radius: 10px; cursor: pointer;
+}
+.btn.primary { background: var(--meadow); color: #fff; }
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(1px); }
+
+.sitebtn {
+  display: block; width: 100%; margin-top: 4px; padding: 4px; border: 0; background: transparent;
+  font: inherit; font-size: 12.5px; color: var(--meadow-dark); text-decoration: underline;
+  text-underline-offset: 2px; cursor: pointer; border-radius: 6px;
+}
+.sitebtn[hidden] { display: none; }
+
+.note { margin: 6px 0 0; font-size: 12.5px; color: #8a3b22; }
+.note:empty { display: none; }
+
+.log { margin-top: 10px; padding-top: 8px; border-top: 2px dashed rgba(63,107,46,.35); }
+.log h2 { font-size: 13px; font-weight: 700; margin: 0 2px 6px; }
+.log dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 0; }
+.log dl div { background: rgba(255,255,255,.55); border-radius: 8px; padding: 4px 8px; }
+.log dt { font-size: 10.5px; color: var(--soft); }
+.log dd { margin: 1px 0 0; font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.help { margin: 8px 2px 0; font-size: 11.5px; line-height: 1.45; color: var(--soft); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+  <main>
+    <section class="tag" aria-label="Ear tag">
+      <span class="hole" aria-hidden="true"></span>
+      <label for="name" class="sr">Cow's name</label>
+      <input id="name" maxlength="16" spellcheck="false" autocomplete="off">
+      <span class="no" id="tagno">No. 0000</span>
+    </section>
+
+    <section class="breeds" aria-labelledby="breedLabel">
+      <div class="breed-head"><span id="breedLabel">Breed</span><span id="breedName" class="breed-name"></span></div>
+      <div class="swatches" role="radiogroup" aria-labelledby="breedLabel">
+        <button role="radio" data-breed="holstein" title="Holstein" class="sw sw-holstein"></button>
+        <button role="radio" data-breed="jersey" title="Jersey" class="sw sw-jersey"></button>
+        <button role="radio" data-breed="hereford" title="Hereford" class="sw sw-hereford"></button>
+        <button role="radio" data-breed="angus" title="Angus" class="sw sw-angus"></button>
+        <button role="radio" data-breed="highland" title="Highland" class="sw sw-highland"></button>
+      </div>
+    </section>
+
+    <section class="controls">
+      <label class="row"><span>Show her on pages</span><input type="checkbox" id="enabled" class="switch"></label>
+      <div class="chips">
+        <label class="chip"><input type="checkbox" id="sound"><span>Moo sound</span></label>
+        <label class="chip"><input type="checkbox" id="bell"><span>Cowbell</span></label>
+        <label class="chip"><input type="checkbox" id="calf"><span>Her calf</span></label>
+        <label class="chip"><input type="checkbox" id="pies"><span>Cow pies</span></label>
+      </div>
+      <div class="row">
+        <span id="sizeLabel">Size</span>
+        <div class="seg" role="radiogroup" aria-labelledby="sizeLabel">
+          <button role="radio" data-size="s">Small</button>
+          <button role="radio" data-size="m">Medium</button>
+          <button role="radio" data-size="l">Big</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="actions">
+      <button id="summon" class="btn primary">Call her over</button>
+      <button id="grass" class="btn">Drop grass</button>
+    </section>
+    <button id="site" class="sitebtn" hidden></button>
+    <p class="note" id="note" role="status"></p>
+
+    <section class="log" aria-labelledby="logLabel">
+      <h2 id="logLabel">Logbook</h2>
+      <dl>
+        <div><dt>Days</dt><dd id="s-days">0</dd></div>
+        <div><dt>Moos</dt><dd id="s-moos">0</dd></div>
+        <div><dt>Pets</dt><dd id="s-pets">0</dd></div>
+        <div><dt>Grass</dt><dd id="s-grass">0</dd></div>
+        <div><dt>Pies</dt><dd id="s-pies">0</dd></div>
+        <div><dt>Drops</dt><dd id="s-drops">0</dd></div>
+      </dl>
+    </section>
+
+    <p class="help">Alt-click to plant grass. Drag her onto anything on the page and she'll stand on it, even as you scroll.</p>
+  </main>
+<script>
+// Toolbar Moo panel (iframe inside panel.html view 'moo'). Settings live in yw-moo, which the UI
+// pushes to every page; the logbook is yw-moo-stats, filled by the UI from tabs' 'moo-stats'.
+const T = parent.__TAURI__;
+const DEFAULTS = { enabled: true, name: 'Clarabelle', sound: true, pies: true, size: 'm', breed: 'holstein', bell: true, calf: false, hiddenSites: [] };
+const BREEDS = { holstein: 'Holstein', jersey: 'Jersey', hereford: 'Hereford', angus: 'Angus', highland: 'Highland' };
+const TOGGLES = ['enabled', 'sound', 'bell', 'calf', 'pies'];
+const $ = (id) => document.getElementById(id);
+const get = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const cur = () => ({ ...DEFAULTS, ...get('yw-moo', {}) });
+const set = (o) => put('yw-moo', { ...cur(), ...o });
+const note = (t) => { $('note').textContent = t || ''; };
+let siteHost = null;
+
+function draw() {
+  const c = cur();
+  const tag = get('yw-moo-tag', null) || { no: String(Math.floor(1000 + Math.random() * 9000)), met: Date.now() };
+  put('yw-moo-tag', tag);
+  $('tagno').textContent = `No. ${tag.no}`;
+  if (document.activeElement !== $('name')) $('name').value = c.name;
+  TOGGLES.forEach((k) => { $(k).checked = !!c[k]; });
+  document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.size === c.size)));
+  document.querySelectorAll('.sw').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.breed === c.breed)));
+  $('breedName').textContent = BREEDS[c.breed] || 'Holstein';
+  const stats = get('yw-moo-stats', {});
+  $('s-days').textContent = Math.max(1, Math.floor((Date.now() - tag.met) / 86400000) + 1);
+  for (const k of ['moos', 'pets', 'grass', 'pies', 'drops']) $('s-' + k).textContent = (stats[k] || 0).toLocaleString();
+  const btn = $('site');
+  if (!siteHost) { btn.hidden = true; return; }
+  const hidden = c.hiddenSites.includes(siteHost);
+  btn.textContent = hidden ? `Show her on ${siteHost} again` : `Hide her on ${siteHost}`;
+  btn.hidden = false;
+}
+
+TOGGLES.forEach((k) => $(k).addEventListener('change', () => set({ [k]: $(k).checked })));
+let nameTimer;
+$('name').addEventListener('input', () => {
+  clearTimeout(nameTimer);
+  nameTimer = setTimeout(() => set({ name: $('name').value.trim() || DEFAULTS.name }), 300);
+});
+document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => { set({ size: b.dataset.size }); draw(); }));
+document.querySelectorAll('.sw').forEach((b) => b.addEventListener('click', () => { set({ breed: b.dataset.breed }); draw(); }));
+$('site').addEventListener('click', () => {
+  if (!siteHost) return;
+  const list = new Set(cur().hiddenSites);
+  list.has(siteHost) ? list.delete(siteHost) : list.add(siteHost);
+  set({ hiddenSites: [...list] });
+  draw();
+});
+function send(type) {
+  note('');
+  const c = cur();
+  if (!siteHost) { note("She can't visit this page. Try a regular website."); return; }
+  if (!c.enabled || c.hiddenSites.includes(siteHost)) { note('She is hidden here. Turn on "Show her on pages" or show her on this site first.'); return; }
+  T.event.emitTo('ui', 'moo-do', type);
+  T.core.invoke('panel_hide');
+}
+$('summon').addEventListener('click', () => send('summon'));
+$('grass').addEventListener('click', () => send('grass'));
+
+T.event.listen('panel-open', ({ payload }) => { if (payload === 'moo') { note(''); draw(); } });
+T.event.listen('moo-site', ({ payload }) => { siteHost = payload || null; draw(); });
+addEventListener('storage', (e) => { if (e.key && e.key.startsWith('yw-moo')) draw(); });
+draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "YukiWeb",
+  "version": "0.7.5",
+  "identifier": "lol.yukichat.web",
+  "build": {
+    "frontendDist": "../src"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
+      "nsis": {
+        "installerHooks": "installer-hooks.nsh"
+      }
+    },
+    "createUpdaterArtifacts": true,
+    "externalBin": [
+      "binaries/sing-box"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZGMThFMUJGMDEwMkQzNjkKUldScDB3SUJ2K0VZYjVqWEUvWXN6T0Y5bzA2UFlVYkFCdmxyaDJSSXhOTWVOcTBpMjdreUlpdzEK",
+      "endpoints": [
+        "https://yuki.yukichat.lol/yukiweb/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

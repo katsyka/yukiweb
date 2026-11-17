@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>YukiWeb</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;background:#fff;color:#16181e;font:15px/1.5 "Segoe UI",system-ui,sans-serif}
+main{width:min(720px,100%)}
+h1{margin-bottom:6px;font-size:28px;letter-spacing:-.02em}
+p{margin-bottom:20px;color:#6b7080}
+code{padding:1px 6px;border-radius:5px;background:#f1f2f5;color:#16181e;word-break:break-all}
+canvas{display:block;width:100%;margin-bottom:24px;image-rendering:pixelated;cursor:pointer;touch-action:none}
+.row{display:flex;align-items:center;gap:10px;margin-top:16px;color:#6b7080;font-size:13px}
+.row span{margin-left:auto}
+button{padding:8px 18px;border:0;border-radius:18px;background:#ffd23f;color:#16181e;font:inherit;font-weight:600;cursor:pointer}
+#vpnb{background:#f1f2f5}
+</style>
+</head>
+<body>
+<main>
+  <canvas id="c" width="320" height="180"></canvas>
+  <h1 id="h"></h1>
+  <p id="s"></p>
+  <div class="row"><button id="retry">Try again</button><button id="vpnb" hidden>VPN settings</button><span>← → steer · ↑ DRS · Space to race</span></div>
+</main>
+<script>
+const ERR = /*ERR*/null || { kind: new URLSearchParams(location.search).get('k') || 'offline', url: 'https://example.com/' };
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
+let host = ''; try { host = new URL(ERR.url).host } catch {}
+const kind = navigator.onLine === false && ERR.kind !== 'f1' ? 'offline' : ERR.kind;
+const HC = `<code>${esc(host)}</code>`;
+const VN = `<b>${esc(ERR.vpn || 'VPN')}</b>`;
+const LANG = (ERR.lang || navigator.language || 'en').slice(0, 2);
+const TEXTS = {
+  en: {
+    offline: ['No internet', "Yuki's in the pits until you're back online. Fancy a stint meanwhile?"],
+    dns: ["Can't find this site", `${HC} doesn't exist, or DNS is having a moment.`],
+    connect: ["Couldn't connect", `${HC} isn't answering. Red flag.`],
+    vpn: ["VPN server isn't responding", `${HC} got no answer through ${VN}. Pick another server or turn the VPN off.`],
+    slow: ['Not responding', `${HC} has been silent for 20 seconds. Red flag.`],
+    cert: ['Connection not secure', `The certificate for ${HC} is invalid, so YukiWeb stopped here.`],
+    f1: ['Lights out', "Yuki's #22 is on the grid. No internet required."],
+    '404': ['404 · off track', `There's no Yuki page called <code>${esc(ERR.url)}</code>.`],
+    oops: 'Something went wrong', retry: 'Try again', vpnbtn: 'VPN settings', keys: '← → steer · ↑ DRS · Space to race',
+  },
+  ru: {
+    offline: ['Нет интернета', 'Юки на пит-стопе, пока интернет не вернётся. Проедем пару кругов?'],
+    dns: ['Сайт не найден', `${HC} не существует, или у DNS что-то не так.`],
+    connect: ['Не удалось подключиться', `${HC} не отвечает. Красный флаг.`],
+    vpn: ['VPN-сервер не отвечает', `${HC} не ответил через ${VN}. Выберите другой сервер или выключите VPN.`],
+    slow: ['Сайт не отвечает', `${HC} молчит уже 20 секунд. Красный флаг.`],
+    cert: ['Небезопасное подключение', `Сертификат ${HC} недействителен, поэтому YukiWeb остановился.`],
+    f1: ['Огни погасли', 'Болид Юки №22 на стартовой решётке. Интернет не нужен.'],
+    '404': ['404 · вылет с трассы', `Страницы Yuki <code>${esc(ERR.url)}</code> нет.`],
+    oops: 'Что-то пошло не так', retry: 'Повторить', vpnbtn: 'Настройки VPN', keys: '← → руль · ↑ DRS · Пробел — старт',
+  },
+  de: {
+    offline: ['Kein Internet', 'Yuki ist an der Box, bis du wieder online bist. Lust auf einen Stint?'],
+    dns: ['Seite nicht gefunden', `${HC} existiert nicht, oder das DNS hat gerade Probleme.`],
+    connect: ['Keine Verbindung', `${HC} antwortet nicht. Rote Flagge.`],
+    vpn: ['VPN-Server antwortet nicht', `${HC} kam über ${VN} nicht durch. Wähle einen anderen Server oder schalte das VPN aus.`],
+    slow: ['Keine Antwort', `${HC} schweigt seit 20 Sekunden. Rote Flagge.`],
+    cert: ['Verbindung nicht sicher', `Das Zertifikat von ${HC} ist ungültig, deshalb hat YukiWeb hier angehalten.`],
+    f1: ['Lights out', 'Yukis #22 steht in der Startaufstellung. Kein Internet nötig.'],
+    '404': ['404 · von der Strecke', `Es gibt keine Yuki-Seite namens <code>${esc(ERR.url)}</code>.`],
+    oops: 'Etwas ist schiefgelaufen', retry: 'Erneut versuchen', vpnbtn: 'VPN-Einstellungen', keys: '← → lenken · ↑ DRS · Leertaste: Start',
+  },
+};
+const TX = TEXTS[LANG] || TEXTS.en;
+const TEXT = TX[kind] || TEXT_FALLBACK();
+document.documentElement.lang = TEXTS[LANG] ? LANG : 'en';
+document.querySelector('#retry').textContent = TX.retry;
+document.querySelector('.row span').textContent = TX.keys;
+function TEXT_FALLBACK() { return [TX.oops, esc(ERR.url)] }
+document.title = TEXT[0];
+$('h').textContent = TEXT[0];
+$('s').innerHTML = TEXT[1];
+const retry = () => { if (ERR.url && kind !== '404') location.href = ERR.url };
+if (kind === '404' || kind === 'f1') $('retry').hidden = true;
+$('retry').onclick = retry;
+// The browser opens its VPN panel on this message.
+if (kind === 'vpn') { $('vpnb').hidden = false; $('vpnb').textContent = TX.vpnbtn; $('vpnb').onclick = () => { try { chrome.webview.postMessage(JSON.stringify({ yw: 1, k: 'vpn-open' })) } catch {} } }
+addEventListener('online', retry);
+
+// --- #22 pixel F1 ---------------------------------------------------------
+const cv = $('c'), g = cv.getContext('2d'), W = 320, H = 180, RL = 96, RR = 224, PY = H - 30;
+g.imageSmoothingEnabled = false;
+const CAR = [
+  'RRNNNNNNRR', '....NN....', 'KK..NN..KK', 'KK.NNNN.KK', 'KK.NYYN.KK', '...NNNN...',
+  '...NRRN...', '..NNKKNN..', '..NNBBNN..', '..NNNNNN..', '.NNRRRRNN.', '.NNNNNNNN.',
+  'KKNNNNNNKK', 'KKNNNNNNKK', 'KKNNYYNNKK', 'KK.NNNN.KK', '....NN....', 'RRRRRRRRRR',
+];
+const PAL = { N: '#1e2a5a', R: '#e10600', Y: '#ffd23f', K: '#111', B: '#3b82f6' };
+// Rivals stay grey like the rest of the page; only #22 gets colour.
+const RIVALS = [
+  { N: '#a9adb5', R: '#8a8f9c', Y: '#8a8f9c', K: '#6b7080', B: '#8a8f9c' },
+  { N: '#bfc3ca', R: '#9a9ea8', Y: '#9a9ea8', K: '#6b7080', B: '#9a9ea8' },
+];
+function sprite(p) {
+  const o = document.createElement('canvas'); o.width = 10; o.height = 18;
+  const x = o.getContext('2d');
+  CAR.forEach((row, j) => [...row].forEach((ch, i) => { if (ch !== '.') { x.fillStyle = p[ch] || PAL[ch]; x.fillRect(i, j, 1, 1) } }));
+  return o;
+}
+const ME = sprite({}), RS = RIVALS.map(sprite);
+
+let mode = 'idle', px = 160, spd = 0, dist = 0, drs = 1, passed = 0, riv = [], next = 0, scroll = 0, flash = 0, t0 = 0, best = 0;
+try { best = +localStorage.getItem('yw-best') || 0 } catch {}
+const keys = {};
+let touch = 0;
+
+function start() { mode = 'run'; px = 160; spd = 110; dist = 0; drs = 1; passed = 0; riv = []; next = 60; flash = 0 }
+function crash() {
+  mode = 'crash';
+  if (dist > best) { best = dist; try { localStorage.setItem('yw-best', best) } catch {} }
+}
+const pos = () => Math.max(1, 20 - passed);
+
+function spawn() {
+  riv.push({ x: RL + 12 + Math.random() * (RR - RL - 24), y: -20, v: spd * (.45 + Math.random() * .25),
+    s: RS[Math.random() * RS.length | 0], ph: Math.random() * 100, w: Math.random() < .3 ? 24 : 0, p: 0 });
+}
+
+function update(dt) {
+  const steer = ((keys.arrowright || keys.d) ? 1 : 0) - ((keys.arrowleft || keys.a) ? 1 : 0) || touch;
+  px = Math.max(70, Math.min(250, px + steer * 110 * dt));
+  const boost = (keys.arrowup || keys.w) && drs > 0;
+  drs = Math.max(0, Math.min(1, drs + (boost ? -.5 : .08) * dt));
+  const base = Math.min(260, 110 + dist / 40), off = px < RL + 5 || px > RR - 5;
+  spd += ((off ? base * .45 : base + (boost ? 90 : 0)) - spd) * Math.min(1, dt * 2);
+  scroll = (scroll + spd * dt) % 32;
+  dist += spd * dt * .6;
+  next -= spd * dt;
+  if (next <= 0) { spawn(); next = 70 + Math.random() * 90 - Math.min(40, dist / 200) }
+  for (const r of riv) {
+    r.y += (spd - r.v) * dt;
+    r.x = Math.max(RL + 6, Math.min(RR - 6, r.x + Math.sin((r.y + r.ph) / 30) * r.w * dt));
+    if (!r.p && r.y > PY + 18) { r.p = 1; passed++; if (passed === 19) flash = 2.5 }
+    if (Math.abs(r.x - px) < 9 && Math.abs(r.y - PY) < 16) return crash();
+  }
+  riv = riv.filter(r => r.y < H + 20 && r.y > -60);
+  if (flash > 0) flash -= dt;
+}
+
+function text(s, x, y, c = '#fff', size = 8) {
+  g.font = `bold ${size}px monospace`; g.fillStyle = c; g.fillText(s, x, y);
+}
+
+function draw() {
+  const s = Math.floor(scroll);
+  g.clearRect(0, 0, W, H);
+  g.fillStyle = '#8a8f9c';
+  for (let y = -16 + s % 16; y < H; y += 16) { g.fillRect(RL - 2, y, 2, 10); g.fillRect(RR, y, 2, 10) }
+  g.fillStyle = '#d9dce2';
+  for (let y = -32 + s; y < H; y += 32) g.fillRect(159, y, 2, 12);
+  for (const r of riv) g.drawImage(r.s, Math.round(r.x - 5), Math.round(r.y - 9));
+  if (mode === 'run' && (keys.arrowup || keys.w) && drs > 0) { g.fillStyle = '#ffd23f'; g.fillRect(Math.round(px - 1), PY + 9, 2, 3) }
+  g.drawImage(ME, Math.round(px - 5), PY - 9);
+
+  if (mode === 'idle') return;
+  const ink = '#6b7080';
+  g.textAlign = 'right';
+  text(`P${pos()}  ${(dist / 1000).toFixed(2)} KM`, W - 4, 10, ink);
+  if (best) text(`BEST ${(best / 1000).toFixed(2)}`, W - 4, 20, '#a9adb5');
+  g.fillStyle = '#e4e6eb'; g.fillRect(4, 4, 40, 3);
+  g.fillStyle = drs > .05 ? '#ffd23f' : '#a9adb5'; g.fillRect(4, 4, 40 * drs, 3);
+  g.textAlign = 'left';
+  text('DRS', 4, 16, '#a9adb5');
+
+  g.textAlign = 'center';
+  if (flash > 0) text('P1!', W / 2, 40, '#a16b00', 12);
+  if (mode === 'crash') {
+    text('BOX BOX', W / 2, 70, ink, 12);
+    text('SPACE TO GO AGAIN', W / 2, 86, '#a9adb5');
+  }
+}
+
+function frame(t) {
+  const dt = Math.min(.05, (t - t0) / 1000 || 0); t0 = t;
+  if (mode === 'run') update(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+
+addEventListener('keydown', e => {
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' '].includes(e.key)) e.preventDefault();
+  keys[e.key.toLowerCase()] = 1;
+  if ((e.key === ' ' || e.key === 'Enter') && mode !== 'run') start();
+});
+addEventListener('keyup', e => { keys[e.key.toLowerCase()] = 0 });
+cv.addEventListener('pointerdown', e => {
+  if (mode !== 'run') return start();
+  const r = cv.getBoundingClientRect();
+  touch = e.clientX - r.left < r.width / 2 ? -1 : 1;
+});
+addEventListener('pointerup', () => { touch = 0 });
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+/* Colors come from theme.js; --tab is the toolbar/active-tab surface. */
+:root{--tab:var(--surface)}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden;background:var(--chrome);color:var(--text);font:13px/1 "Segoe UI",system-ui,sans-serif;user-select:none}
+button{border:0;background:none;color:inherit;font:inherit;padding:0}
+svg{fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
+
+#strip{display:flex;align-items:flex-end;height:40px;padding-left:8px}
+.logo{flex:none;width:18px;height:18px;margin:0 10px 11px 4px;border-radius:5px;background:var(--acc)}
+#tabs{display:flex;align-items:flex-end;gap:2px;min-width:0;flex:0 1 auto;overflow-x:auto;scrollbar-width:none}
+.tab{display:flex;align-items:center;gap:8px;flex:0 1 220px;min-width:40px;container-type:inline-size;transition:opacity .2s;height:32px;padding:0 6px 0 12px;border-radius:9px 9px 0 0;color:var(--dim)}
+.tab:hover{background:var(--soft2)}
+.tab.on{background:var(--tab);color:var(--text)}
+.tab img,.tab .fi{flex:none;width:16px;height:16px;border-radius:4px}
+.tab .fi{background:var(--line3)}
+.tab .ld{flex:none;width:14px;height:14px;border:2px solid var(--line3);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(1turn)}}
+.tab span{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tab .x{flex:none;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:10px}
+.tab .x:hover{background:var(--hover)}
+#add{flex:none;width:28px;height:28px;margin:0 4px 4px;border-radius:50%;font-size:18px}
+#add:hover,#bar button:hover{background:var(--hover)}
+.grow{flex:1;align-self:stretch}
+.wc{display:flex;align-self:flex-start}
+.wc button{display:grid;place-items:center;width:46px;height:32px}
+.wc svg{width:10px;height:10px;stroke-width:1}
+.wc button:hover{background:var(--hover)}
+.wc .x:hover{background:#e81123;color:#fff}
+
+#bar{display:flex;align-items:center;gap:2px;height:44px;padding:0 8px;background:var(--tab);border-bottom:1px solid var(--line)}
+#bar>button{display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:50%}
+#bar svg{width:18px;height:18px;stroke-width:2}
+#omni{flex:1;display:flex;align-items:center;gap:8px;height:34px;margin:0 6px;padding:0 14px;border:1px solid transparent;border-radius:17px;background:var(--soft)}
+#omni:focus-within{background:var(--surface);border-color:var(--acc)}
+#q{flex:1;min-width:0;border:0;outline:0;background:none;color:var(--text);font:14px "Segoe UI",system-ui,sans-serif}
+#pill{padding:3px 9px;border-radius:10px;background:var(--acc);color:var(--on-acc);font-size:12px;font-weight:600}
+#chat.on{background:var(--acc);color:var(--on-acc)}
+#bar>#upd{width:auto;height:28px;margin-right:4px;padding:0 12px;border-radius:14px;background:var(--acc);color:var(--on-acc);font-size:12px;font-weight:600}
+#bar>#upd[hidden]{display:none}
+.logo{display:grid;place-items:center;color:var(--on-acc)}
+.logo svg{width:16px;height:16px}
+#add svg{width:16px;height:16px;stroke-width:2}
+#add{display:grid;place-items:center}
+.tab .ic{flex:none;width:16px;height:16px;stroke-width:1.75;color:var(--dim)}
+.tab .x .ic{width:12px;height:12px;stroke-width:2.5;color:inherit}
+#bar>#vpn{display:flex;align-items:center;gap:6px;width:auto;height:30px;padding:0 10px 0 8px;border-radius:15px;font-size:12px;font-weight:600;color:var(--dim)}
+#bar>#vpn svg{width:16px;height:16px}
+#bar>#agb{position:relative;display:flex;align-items:center;gap:6px;width:auto;height:30px;padding:0 10px 0 8px;border-radius:15px;font-size:12px;font-weight:600;color:var(--dim)}
+#agb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#bar>#agb.on{background:var(--text);color:var(--surface)}
+#agb i{position:absolute;top:-2px;right:-2px;min-width:15px;height:15px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:#d97706;color:#fff;font:700 9px/15px system-ui,sans-serif;text-align:center}
+#agb i[hidden]{display:none}
+.tab .agd{flex:none;width:8px;height:8px;border-radius:50%;margin-right:-3px}
+#vpn i{width:7px;height:7px;border-radius:50%;background:var(--line3)}
+#vpn.on{color:var(--text);background:rgba(34,197,94,.14)}
+#vpn.on i{background:#22c55e}
+#vpn.err i{background:#ef4444}
+#bar>#vpn[hidden]{display:none}
+#bar>#acct{overflow:hidden;font-weight:700;font-size:12px}
+#acct img{width:26px;height:26px;border-radius:50%;object-fit:cover}
+#acct .ini{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--acc);color:var(--on-acc)}
+#bar>#dl[hidden]{display:none}
+/* Download progress: a ring around the icon, --p = 0..1 */
+#dl{position:relative}
+#dl.run::before{content:"";position:absolute;inset:3px;border-radius:50%;background:conic-gradient(var(--text) calc(var(--p,0)*1turn),var(--line) 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 0)}
+#dl.new{animation:pop .5s ease}
+@keyframes pop{40%{transform:translateY(-3px) scale(1.12)}}
+#menu .ic{width:18px;height:18px}
+/* Crowded strip: the active tab keeps its title, others shrink to favicon pills. */
+.tab.on{min-width:150px}
+/* Like Chrome: tiny inactive tabs have no close button at all, so a click always picks the
+   tab. Close them by middle-click, or open them first. */
+@container (max-width:90px){.tab:not(.on) span,.tab:not(.on) .x{display:none}}
+/* Sleeping tabs: faded favicon with a small moon. */
+.tab.zz{position:relative}
+.tab.zz>img,.tab.zz>svg:first-child{opacity:.45;filter:grayscale(1)}
+.tab.zz span{opacity:.6}
+.tab.zz::after{content:"";position:absolute;left:21px;top:7px;width:7px;height:7px;border-radius:50%;background:var(--chrome);box-shadow:inset -2px -1px 0 0 #8a8f9c}
+#star,#rd,#trb,#ymb{flex:none;display:grid;place-items:center;width:26px;height:26px;margin-right:-8px;border-radius:50%;color:var(--dim)}
+#star[hidden],#rd[hidden],#trb[hidden],#ymb[hidden]{display:none}
+#star:hover,#rd:hover,#trb:hover,#ymb:hover{background:var(--hover)}
+#star .ic,#rd .ic,#trb .ic,#ymb .ic{width:16px;height:16px}
+#star.on{color:var(--acc-text)}
+#star.on .ic{fill:var(--acc)}
+#rd,#trb{margin-right:-4px}
+#trb.on{background:var(--acc);color:var(--on-acc)}
+#bmbar{display:flex;align-items:center;height:30px;padding:0 8px;background:var(--tab);border-bottom:1px solid var(--line)}
+#bmbar[hidden]{display:none}
+#bms{flex:1;display:flex;gap:2px;min-width:0;overflow:hidden}
+#bms button,#bmmore{display:flex;align-items:center;gap:6px;flex:none;max-width:170px;height:24px;padding:0 8px;border-radius:12px;color:var(--text);font-size:12px}
+#bms button:hover,#bmmore:hover{background:var(--hover)}
+#bms span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#bms img,#bms .ic{flex:none;width:14px;height:14px;border-radius:3px}
+#bms .ic{color:var(--dim)}
+#bmmore .ic{width:14px;height:14px}
+.bm #bar{border-bottom-color:transparent}
+#bar>#addext{width:auto;height:28px;margin-right:4px;padding:0 12px;border-radius:14px;background:var(--acc);color:var(--on-acc);font-size:12px;font-weight:600}
+#bar>#addext[hidden],#bar>#ext[hidden]{display:none}
+#addext:disabled{opacity:.6}
+/* Private tabs: dark, with a mask-like dot. */
+.tab.priv{background:#2b2d33;color:#c9cad2}
+.tab.priv.on{background:#1f2024;color:#fff}
+.tab.priv:hover{background:#34363d}
+.tab.priv .x:hover{background:#45474f}
+
+/* Tab groups: a colored chip before the group's tabs, and a line under each of them. */
+.grp{flex:none;display:flex;align-items:center;gap:6px;height:24px;margin:0 2px 4px;padding:0 10px;border-radius:12px;background:var(--gc);color:#16181e;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.grp:empty{width:14px;padding:0}
+.grp i{font-style:normal;opacity:.7}
+.tab.g{box-shadow:inset 0 -2px var(--gc)}
+.tab.sp{background:var(--soft2)}
+.tab.sp.on{background:var(--tab)}
+.tab .au{flex:none;display:grid;place-items:center;width:20px;height:20px;border:0;border-radius:50%;background:none;color:var(--dim);cursor:pointer}
+.tab .au:hover{background:var(--hover)}
+.tab .au .ic{width:13px;height:13px}
+.tab .au.m{color:var(--text)}
+@container (max-width:90px){.tab .au{display:none}}
+/* Peek: replaces the address field while a link floats over the page. */
+#peekbar{flex:1;display:flex;align-items:center;gap:8px;min-width:0;height:34px;padding:0 6px 0 14px;border-radius:17px;background:var(--acc);color:var(--on-acc)}
+#peekbar[hidden]{display:none}
+#peekbar span{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600}
+#peekbar button{height:26px;padding:0 12px;border:0;border-radius:13px;background:rgba(0,0,0,.12);color:inherit;font:inherit;font-weight:600;cursor:pointer}
+#peekbar button:hover{background:rgba(0,0,0,.22)}
+#omni[hidden]{display:none}
+
+#ymb{margin-right:-4px;color:var(--acc-text)}
+/* Unified notifications: count on the avatar. */
+#acct{position:relative}
+#acct .bd{position:absolute;top:1px;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#ff5c7a;color:#fff;font:700 10px/16px "Segoe UI",system-ui,sans-serif;text-align:center}
+/* Now playing: a pill with the track while something plays. */
+#bar>#np{display:flex;align-items:center;gap:6px;flex:0 1 auto;width:auto;min-width:0;max-width:180px;height:30px;padding:0 10px 0 8px;border-radius:15px;overflow:hidden}
+#bar>#np[hidden]{display:none}
+#np span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:12px}
+#np .ic{flex:none;width:16px;height:16px;color:var(--acc-text)}
+#np.pl .ic{animation:np 1.2s ease-in-out infinite}
+@keyframes np{50%{transform:scale(.82)}}

@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>New tab</title>
+<script src="theme.js"></script>
+<script src="i18n.js"></script>
+<style>
+*{box-sizing:border-box;margin:0}
+body{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:12vh 16px 72px;background:#cfd0d2 url(wall.jpg) center bottom/cover no-repeat fixed;color:#16181e;font:15px "Segoe UI",system-ui,sans-serif;--card:color-mix(in srgb,var(--surface) 90%,transparent)}
+.logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;font-size:34px;font-weight:700;letter-spacing:-.03em}
+.logo i{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:var(--acc)}
+.logo svg{width:32px;height:32px}
+form{width:min(600px,100%)}
+input{width:100%;height:48px;padding:0 22px;border:1px solid #fff;border-radius:24px;outline:0;background:#fff;font:16px "Segoe UI",system-ui,sans-serif}
+input:focus{border-color:var(--acc)}
+.grid{display:grid;grid-template-columns:repeat(5,96px);gap:8px;margin-top:36px}
+.grid a{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 4px;border-radius:12px;color:#16181e;text-decoration:none;font-size:13px}
+.grid a:hover{background:rgba(255,255,255,.55)}
+.grid a b{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#fff;color:#16181e}
+.grid a b svg{width:20px;height:20px}
+.grid a:hover b{background:var(--acc);color:var(--on-acc)}
+
+/* Corners: clock and weather sit straight on the wallpaper. */
+.clock{position:fixed;top:22px;left:28px}
+.clock .tm{font-size:46px;font-weight:600;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.clock .dt{margin-top:6px;font-size:14px;opacity:.85}
+.clock .hi{margin-top:2px;font-size:14px;font-weight:600}
+.wx{position:fixed;top:22px;right:28px;display:flex;align-items:center;gap:12px;padding:8px 10px;border:0;border-radius:12px;background:none;color:inherit;font:inherit;text-align:right;cursor:pointer}
+.wx:hover{background:rgba(255,255,255,.3)}
+.wx svg{width:34px;height:34px}
+.wx .tp{font-size:28px;font-weight:600;line-height:1}
+.wx small{display:block;margin-top:3px;font-size:13px;opacity:.85}
+.wx small.ex{margin-top:1px;font-size:12px;opacity:.75}
+/* Weather details (click the weather). */
+.wxp{position:fixed;top:84px;right:28px;width:380px;max-height:calc(100vh - 110px);overflow-y:auto;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--text);box-shadow:0 12px 40px rgba(0,0,0,.18);z-index:5}
+.wxp .hd{display:flex;align-items:center;gap:12px}
+.wxp .hd svg{width:44px;height:44px}
+.wxp .hd b{font-size:38px;font-weight:600;line-height:1}
+.wxp .hd div{flex:1;min-width:0}
+.wxp .hd small{display:block;color:var(--dim);font-size:13px;margin-top:2px}
+.wxp .det{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:14px 0}
+.wxp .det div{padding:8px 10px;border-radius:10px;background:var(--soft)}
+.wxp .det span{display:block;font-size:11px;color:var(--dim)}
+.wxp .det b{font-size:14px;font-weight:600}
+.wxp h5{margin:12px 0 8px;font-size:12px;font-weight:600;color:var(--dim)}
+.wxp .hr{display:flex;gap:4px;overflow-x:auto;padding-bottom:4px}
+.wxp .hr div{flex:none;width:46px;padding:6px 0;border-radius:10px;text-align:center;font-size:12px}
+.wxp .hr div:first-child{background:var(--soft)}
+.wxp .hr svg{width:20px;height:20px;margin:4px auto;display:block}
+.wxp .hr em{display:block;font-style:normal;font-size:10px;color:#3b82c4;min-height:12px}
+.wxp .dy{display:grid;grid-template-columns:44px 24px 1fr 34px 90px;align-items:center;gap:8px;padding:5px 0;font-size:13px}
+.wxp .dy svg{width:20px;height:20px}
+.wxp .dy em{font-style:normal;font-size:11px;color:#3b82c4}
+.wxp .dy .rng{position:relative;height:5px;border-radius:3px;background:var(--soft)}
+.wxp .dy .rng i{position:absolute;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#7aa2ff,#ffb547)}
+.wxp .dy .t{text-align:right;white-space:nowrap}
+.wxp .dy .t span{color:var(--dim);margin-left:6px}
+.wxp .ft{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:11px;color:var(--dim)}
+.wxp .ft button{height:30px;padding:0 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--text);font:500 12px "Segoe UI",system-ui,sans-serif;cursor:pointer}
+
+/* Widgets: theme-colored cards under the apps. */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;width:min(1080px,100%);margin-top:40px}
+.card{min-width:0;padding:16px;border-radius:16px;background:var(--card);color:var(--text)}
+.card h3{display:flex;align-items:center;gap:8px;margin-bottom:12px;color:var(--dim);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.card h3 .ic{flex:none;width:15px;height:15px}
+.card p .ic,.li .ic{width:16px;height:16px}
+.card h3 .n{margin-left:auto;padding:1px 8px;border-radius:9px;background:var(--acc);color:var(--on-acc);letter-spacing:0}
+.card p{color:var(--dim);font-size:13px;line-height:1.45}
+.li{display:flex;align-items:center;gap:10px;margin:0 -8px;padding:7px 8px;border-radius:10px;color:var(--text);text-decoration:none}
+.li:hover{background:var(--hover)}
+.li img,.li .av{flex:none;width:34px;height:34px;border-radius:50%;object-fit:cover;background:var(--soft)}
+.li .av{display:grid;place-items:center;color:var(--dim);font-weight:600}
+.li.sq img{border-radius:8px}
+.li span{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:14px}
+.li span small{display:block;overflow:hidden;color:var(--dim);font-size:12px;text-overflow:ellipsis}
+.li em{flex:none;padding:1px 7px;border-radius:9px;background:var(--acc);color:var(--on-acc);font-size:12px;font-style:normal;font-weight:600}
+.np{display:flex;gap:12px;align-items:center;margin-bottom:10px;color:var(--text);text-decoration:none}
+.np img{width:64px;height:64px;border-radius:10px;object-fit:cover;background:var(--soft)}
+.np b{display:block;font-size:15px}
+.np span{min-width:0}
+.np small{color:var(--dim);font-size:13px}
+.sites{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.sites a{min-width:0;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 2px;border-radius:10px;color:var(--text);text-decoration:none;font-size:12px}
+.sites a:hover{background:var(--hover)}
+.sites img{width:28px;height:28px;border-radius:7px;background:var(--soft)}
+.sites span{max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.big{font-size:30px;font-weight:700;letter-spacing:-.02em}
+.bars{display:flex;align-items:flex-end;gap:6px;height:56px;margin:14px 0 6px}
+.bars i{flex:1;min-height:3px;border-radius:4px;background:var(--line)}
+.bars i.on{background:var(--acc)}
+.days{display:flex;gap:6px;color:var(--dim);font-size:11px}
+.days span{flex:1;text-align:center}
+.more{display:inline-block;margin-top:12px;color:var(--text);font-size:13px;font-weight:600;text-decoration:none;border-bottom:2px solid var(--acc)}
+
+/* Customize. */
+.cz{position:fixed;right:20px;bottom:20px;display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:50%;background:var(--card);color:var(--text);cursor:pointer}
+.cz svg{width:18px;height:18px}
+.sheet{position:fixed;right:20px;bottom:70px;width:290px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--text);box-shadow:0 12px 40px rgba(0,0,0,.18)}
+.sheet h4{margin-bottom:8px;font-size:15px}
+.sheet label{display:flex;align-items:center;justify-content:space-between;padding:7px 0;font-size:14px;cursor:pointer}
+.sheet input[type=checkbox]{width:18px;height:18px;accent-color:var(--acc)}
+.sheet .city{display:flex;gap:6px;margin-top:8px}
+.sheet .city input{height:34px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--text);font-size:14px}
+.sheet button.b{height:34px;padding:0 14px;border:0;border-radius:10px;background:var(--acc);color:var(--on-acc);font:600 13px "Segoe UI",system-ui,sans-serif;cursor:pointer}
+.sheet .err{margin-top:6px;color:#d33;font-size:12px}
+/* Customize → Appearance (like Chrome's side panel, but a sheet over the corner button). */
+.sheet{width:340px;max-height:calc(100vh - 100px);overflow-y:auto}
+.sheet .tabs{display:flex;gap:4px;padding:3px;margin-bottom:12px;border-radius:10px;background:var(--soft)}
+.sheet .tabs button{flex:1;height:30px;border:0;border-radius:8px;background:none;color:var(--dim);font:600 13px "Segoe UI",system-ui,sans-serif;cursor:pointer}
+.sheet .tabs button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.sheet h5{margin:14px 0 8px;font-size:12px;font-weight:600;color:var(--dim)}
+.sheet .ths{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.sheet .th{padding:0;border:2px solid transparent;border-radius:10px;background:none;color:var(--text);font:12px "Segoe UI",system-ui,sans-serif;cursor:pointer;overflow:hidden}
+.sheet .th i{display:block;height:34px;border-radius:8px}
+.sheet .th span{display:block;padding:3px 0 1px;font-size:11px}
+.sheet .th.on{border-color:var(--acc)}
+.sheet .accs{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sheet .acc{width:24px;height:24px;border:0;border-radius:50%;cursor:pointer;box-shadow:0 0 0 2px var(--surface),0 0 0 3px transparent}
+.sheet .acc.on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--text)}
+.sheet input[type=color]{width:26px;height:26px;padding:0;border:0;border-radius:50%;background:none;cursor:pointer}
+.sheet .wg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.sheet .wp{position:relative;padding:0;border:2px solid transparent;border-radius:10px;background:none;cursor:pointer;overflow:hidden;color:var(--text)}
+.sheet .wp i{display:grid;place-items:center;aspect-ratio:16/10;border-radius:8px;background:var(--soft) center/cover}
+.sheet .wp i svg{width:18px;height:18px;color:var(--dim)}
+.sheet .wp span{display:block;padding:2px 0;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sheet .wp.on{border-color:var(--acc)}
+.sheet .more{display:block;margin-top:12px;font-size:12px;color:var(--dim);text-decoration:underline;cursor:pointer;background:none;border:0;padding:0}
+
+/* Dark photo: light logo, clock and labels. */
+body.dk .logo,body.dk .grid a,body.dk .clock,body.dk .wx{color:#fff}
+body.dk .grid a:hover,body.dk .wx:hover{background:rgba(255,255,255,.16)}
+/* Wallpaper off: plain theme colors. */
+body.plain{background:var(--page);color:var(--text);--card:var(--surface)}
+body.plain .grid a{color:var(--text)}
+body.plain .grid a:hover,body.plain .wx:hover{background:var(--hover)}
+body.plain .grid a b,body.plain form input{background:var(--surface);color:var(--text);border-color:var(--line)}
+@media(max-width:900px){.clock,.wx{position:static}.top{display:flex;justify-content:space-between;width:100%;margin-bottom:24px}body{padding-top:24px}}
+@media(max-width:560px){.grid{grid-template-columns:repeat(3,96px)}}
+</style>
+</head>
+<body>
+<div class="top"><div class="clock" id="clock"></div><button class="wx" id="wx" hidden></button></div>
+<div class="logo"><i style="color:var(--on-acc)"><svg viewBox="4 0 61 61"><path fill="#16181e" stroke="none" d="M12 47.5C8 43 6.5 37 7 31 8 17.5 19.5 8 34 8c13 0 22.5 7.5 25 18l1.6 10c1.8 2.6 2.4 5 2 8-.8 5.5-5 9-10.6 9H31c-7.5 0-14.5-1.5-19-5.5Z"/><path style="fill:var(--acc)" stroke="none" d="M34 28C22 29.2 13 35.5 9 44.4 15 39.1 23 34.5 34 33.2Z"/><rect style="fill:var(--acc)" stroke="none" x="28" y="20.5" width="34.5" height="13" rx="6.5"/><circle cx="36" cy="27" r="3.8" fill="none" stroke="#16181e" stroke-width="2.5"/><path d="m38.8 29.8 2.5 2.5" fill="none" stroke="#16181e" stroke-width="2.5" stroke-linecap="round"/></svg></i>YukiWeb</div>
+<form id="f"><input id="s" autocomplete="off"></form>
+<div class="grid" id="apps">
+  <a href="https://yukichat.lol"><b data-i="chat"></b>Chat</a>
+  <a href="https://music.yukichat.lol"><b data-i="music"></b>Music</a>
+  <a href="https://mail.yukichat.lol"><b data-i="mail"></b>Mail</a>
+  <a href="https://meet.yukichat.lol"><b data-i="meet"></b>Meet</a>
+  <a href="https://wallet.yukichat.lol"><b data-i="wallet"></b>Wallet</a>
+  <a href="https://pages.yukichat.lol"><b data-i="pages"></b>Pages</a>
+  <a href="https://write.yukichat.lol"><b data-i="write"></b>Write</a>
+  <a href="https://board.yukichat.lol"><b data-i="board"></b>Board</a>
+  <a href="https://chain.yukichat.lol"><b data-i="chain"></b>Chain</a>
+  <a href="https://yuki.yukichat.lol"><b data-i="hub"></b>Hub</a>
+</div>
+<div class="cards" id="cards"></div>
+<button class="cz" id="cz" title="Customize"></button>
+<div class="sheet" id="sheet" hidden></div>
+<div class="wxp" id="wxp" hidden></div>
+<script src="icons.js"></script>
+<script src="stats.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
+const get = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } };
+const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch {} };
+document.querySelectorAll('b[data-i]').forEach(b => b.innerHTML = icon(b.dataset.i));
+$('cz').innerHTML = icon('sliders');
+
+// yw-wall: unset = the original City photo, "none" = plain, "w:<id>" = a built-in one (WALLS in
+// theme.js), otherwise an uploaded image (data URL). Dark photos get light text.
+function wall() {
+  let w = null;
+  try { w = localStorage.getItem('yw-wall'); } catch {}
+  const b = w && w.startsWith('w:') && WALLS.find(x => x.id === w.slice(2));
+  document.body.classList.toggle('plain', w === 'none');
+  document.body.classList.toggle('dk', !w || !!(b && b.dark));
+  document.body.style.backgroundImage = b ? `url("walls/${b.id}.jpg")` : w && w !== 'none' && !w.startsWith('w:') ? `url("${w}")` : '';
+}
+wall();
+
+const ENGINES = { yuki: 'https://search.yukichat.lol/search?q=', google: 'https://www.google.com/search?q=', yandex: 'https://yandex.ru/search/?text=', bing: 'https://www.bing.com/search?q=', ddg: 'https://duckduckgo.com/?q=' };
+const engine = () => get('yw-search', 'yuki');
+const placeholder = () => { $('s').placeholder = t('Search {0} or type a URL', { yuki: 'Yuki Search', google: 'Google', yandex: 'Yandex', bing: 'Bing', ddg: 'DuckDuckGo' }[engine()] || 'Yuki Search'); };
+$('f').onsubmit = e => {
+  e.preventDefault();
+  const v = $('s').value.trim();
+  if (!v) return;
+  location.href = /^https?:\/\//i.test(v) ? v
+    : /^[^\s/]+\.[a-z]{2,}(\/\S*)?$/i.test(v) ? 'https://' + v
+    : (ENGINES[engine()] || ENGINES.yuki) + encodeURIComponent(v);
+};
+
+// --- Dashboard. yw-dash = which blocks show + the weather city (synced with Yuki ID).
+const BLOCKS = [['clock', 'Clock and greeting'], ['weather', 'Weather'], ['apps', 'Yuki apps'], ['chats', 'Chats'], ['music', 'Music'], ['sites', 'Most visited'], ['stats', 'Browsing stats']];
+const cfg = () => ({ clock: 1, weather: 1, apps: 1, chats: 1, music: 1, sites: 1, stats: 1, ...get('yw-dash', {}) });
+const on = k => !!cfg()[k];
+const LOC = () => LANG === 'en' ? 'en-GB' : LANG;
+
+function clock() {
+  const el = $('clock');
+  el.hidden = !on('clock');
+  if (el.hidden) return;
+  const d = new Date(), h = d.getHours(), name = get('yw-acct', null)?.profile?.display_name;
+  const hi = h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : h < 23 ? 'Good evening' : 'Good night';
+  el.innerHTML = `<div class="tm">${d.toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit' })}</div>`
+    + `<div class="dt">${esc(d.toLocaleDateString(LOC(), { weekday: 'long', day: 'numeric', month: 'long' }))}</div>`
+    + `<div class="hi">${esc(tr(hi))}${name ? ', <span data-nt>' + esc(name) + '</span>' : ''}</div>`;
+}
+
+// Weather: Open-Meteo (no key). Cached 20 minutes in yw-wx.
+const WX = c => c === 0 ? ['sun', 'Clear sky'] : c <= 2 ? ['cloud', 'Partly cloudy'] : c === 3 ? ['cloud', 'Cloudy'] : c <= 48 ? ['cloud', 'Fog']
+  : c <= 57 ? ['rain', 'Drizzle'] : c <= 67 ? ['rain', 'Rain'] : c <= 77 ? ['snow', 'Snow'] : c <= 82 ? ['rain', 'Showers'] : c <= 86 ? ['snow', 'Snow'] : ['bolt', 'Thunderstorm'];
+async function weather(force) {
+  const el = $('wx'), city = cfg().city;
+  el.hidden = !on('weather');
+  if (el.hidden) return;
+  if (!city) { el.innerHTML = `${icon('cloud')}<div><small style="font-size:14px">${esc(tr('Set your city'))}</small></div>`; return; }
+  let w = get('yw-wx', null);
+  if (force || !w || w.lat !== city.lat || Date.now() - w.at > 1200000) {
+    try {
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&timezone=auto&forecast_days=7&forecast_hours=24`
+        + '&current=temperature_2m,apparent_temperature,weather_code,relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,pressure_msl,precipitation,cloud_cover,is_day'
+        + '&hourly=temperature_2m,weather_code,precipitation_probability'
+        + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,sunrise,sunset,uv_index_max');
+      const j = await r.json(), c = j.current;
+      w = { at: Date.now(), lat: city.lat, temp: Math.round(c.temperature_2m), feels: Math.round(c.apparent_temperature), code: c.weather_code,
+        hum: c.relative_humidity_2m, wind: c.wind_speed_10m, dir: c.wind_direction_10m, gust: c.wind_gusts_10m, pres: c.pressure_msl, cloud: c.cloud_cover,
+        hourly: j.hourly, daily: j.daily };
+      put('yw-wx', w);
+    } catch { if (!w) return; }
+  }
+  const [ic, txt] = WX(w.code);
+  const d = w.daily, hi = d ? Math.round(d.temperature_2m_max[0]) : null, lo = d ? Math.round(d.temperature_2m_min[0]) : null;
+  el.innerHTML = `${icon(ic)}<div><div class="tp">${w.temp}°</div><small>${esc(tr(txt))} · <span data-nt>${esc(city.name)}</span></small>`
+    + (d ? `<small class="ex">↑${hi}° ↓${lo}° · ${tr('feels')} ${w.feels}° · ${Math.round(w.wind)} ${tr('km/h')}</small>` : '') + `</div>`;
+  if (!$('wxp').hidden) wxPanel();
+}
+// Details: now, the next 24 hours and 7 days (all from the cached forecast).
+const compass = deg => tr(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round((deg % 360) / 45) % 8]);
+const hm = iso => iso ? new Date(iso).toLocaleTimeString(LANG, { hour: '2-digit', minute: '2-digit' }) : '–';
+function wxPanel() {
+  const w = get('yw-wx', null), city = cfg().city, p = $('wxp');
+  if (!w || !city) { p.hidden = true; return openSheet(true); }
+  p.hidden = false;
+  const [ic, txt] = WX(w.code), d = w.daily, h = w.hourly;
+  const det = [
+    [tr('Feels like'), w.feels + '°'], [tr('Humidity'), (w.hum ?? '–') + '%'], [tr('Wind'), w.wind != null ? `${Math.round(w.wind)} ${tr('km/h')} ${compass(w.dir || 0)}` : '–'],
+    [tr('Gusts'), w.gust != null ? Math.round(w.gust) + ' ' + tr('km/h') : '–'], [tr('Pressure'), w.pres != null ? Math.round(w.pres) + ' hPa' : '–'], [tr('UV index'), d ? Math.round(d.uv_index_max[0] ?? 0) : '–'],
+    [tr('Clouds'), (w.cloud ?? '–') + '%'], [tr('Sunrise'), d ? hm(d.sunrise[0]) : '–'], [tr('Sunset'), d ? hm(d.sunset[0]) : '–'],
+  ];
+  let html = `<div class="hd">${icon(ic)}<b>${w.temp}°</b><div><span data-nt>${esc(city.name)}</span><small>${esc(tr(txt))}${d ? ` · ↑${Math.round(d.temperature_2m_max[0])}° ↓${Math.round(d.temperature_2m_min[0])}°` : ''}</small></div></div>`
+    + `<div class="det">${det.map(([k, v]) => `<div><span>${esc(k)}</span><b>${esc(String(v))}</b></div>`).join('')}</div>`;
+  if (h?.time) {
+    html += `<h5>${tr('Next 24 hours')}</h5><div class="hr">` + h.time.map((t, i) => {
+      const [hi] = WX(h.weather_code[i]), pp = h.precipitation_probability?.[i];
+      return `<div>${i === 0 ? tr('Now') : new Date(t).getHours().toString().padStart(2, '0')}${icon(hi)}<b>${Math.round(h.temperature_2m[i])}°</b><em>${pp >= 20 ? pp + '%' : ''}</em></div>`;
+    }).join('') + '</div>';
+  }
+  if (d?.time) {
+    const mn = Math.min(...d.temperature_2m_min), mx = Math.max(...d.temperature_2m_max), span = Math.max(1, mx - mn);
+    html += `<h5>${tr('7 days')}</h5>` + d.time.map((t, i) => {
+      const [di] = WX(d.weather_code[i]), lo = d.temperature_2m_min[i], hi = d.temperature_2m_max[i], pp = d.precipitation_probability_max?.[i];
+      const day = i === 0 ? tr('Today') : new Date(t + 'T12:00').toLocaleDateString(LANG, { weekday: 'short' });
+      return `<div class="dy"><span>${esc(day)}</span>${icon(di)}<div class="rng"><i style="left:${((lo - mn) / span) * 100}%;right:${100 - ((hi - mn) / span) * 100}%"></i></div><em>${pp >= 20 ? pp + '%' : ''}</em><span class="t">${Math.round(hi)}°<span>${Math.round(lo)}°</span></span></div>`;
+    }).join('');
+  }
+  html += `<div class="ft"><span>Open-Meteo · ${tr('updated')} ${new Date(w.at).toLocaleTimeString(LANG, { hour: '2-digit', minute: '2-digit' })}</span><button id="wxcity">${tr('Change city')}</button></div>`;
+  p.innerHTML = html;
+  $('wxcity').onclick = () => { p.hidden = true; openSheet(true); };
+}
+$('wx').onclick = () => {
+  if (!$('wxp').hidden) { $('wxp').hidden = true; return; }
+  const w = get('yw-wx', null);
+  if (!cfg().city) return openSheet(true);
+  if (!w || !w.daily) weather(true).then(wxPanel); else wxPanel();
+};
+
+function cards() {
+  const c = cfg(), acct = get('yw-acct', null), dd = get('yw-dash-data', null), out = [];
+  $('apps').hidden = !c.apps;
+  if (c.chats) {
+    if (!acct) out.push(`<div class="card"><h3>${icon('chat')}${tr('Chats')}</h3><p>${tr('Sign in with the avatar button to see your chats and music here.')}</p></div>`);
+    else {
+      const chats = dd?.chats || [];
+      out.push(`<div class="card"><h3>${icon('chat')}${tr('Chats')}${dd?.unread ? `<span class="n">${dd.unread}</span>` : ''}</h3>`
+        + (chats.length ? chats.map(x => `<a class="li" href="https://yukichat.lol/?chat=${x.id}" data-nt>${x.avatar ? `<img src="${esc(x.avatar)}" alt="">` : `<i class="av">${esc((x.name || '?')[0].toUpperCase())}</i>`}<span>${esc(x.name)}</span><em>${x.unread}</em></a>`).join('')
+          : `<p>${tr('No unread messages')}</p>`) + '</div>');
+    }
+  }
+  if (c.music && acct) {
+    const m = dd?.music, np = m?.playing, rec = (m?.recent || []).slice(0, np ? 3 : 4);
+    out.push(`<div class="card"><h3>${icon('music')}${tr(np ? 'Now playing' : 'Recently played')}</h3>`
+      + (np ? `<a class="np" href="${esc(np.url)}" data-nt><img src="${esc(np.cover)}" alt=""><span><b>${esc(np.title)}</b><small>${esc(np.artist)}</small></span></a>` : '')
+      + (rec.length ? rec.map(x => `<a class="li sq" href="${esc(x.url)}" data-nt><img src="${esc(x.cover)}" alt=""><span>${esc(x.title)}<small>${esc(x.artist)}</small></span></a>`).join('')
+        : np ? '' : `<p>${tr('Nothing played yet')}</p>`) + '</div>');
+  }
+  if (c.sites) {
+    const m = {};
+    for (const h of get('yw-hist', [])) { try { const host = new URL(h.u).host.replace(/^www\./, ''); m[host] = (m[host] || 0) + (h.n || 1); } catch {} }
+    const top = Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    out.push(`<div class="card"><h3>${icon('globe')}${tr('Most visited')}</h3>`
+      + (top.length ? `<div class="sites" data-nt>${top.map(([h]) => `<a href="https://${esc(h)}"><img src="${favicon(h)}" alt=""><span>${esc(h.replace(/\.(com|ru|org|net|lol|io)$/, ''))}</span></a>`).join('')}</div>`
+        : `<p>${tr('Sites you visit often will show up here.')}</p>`) + '</div>');
+  }
+  if (c.stats) {
+    const all = statsDays(), now = new Date(), week = [];
+    for (let i = 6; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate() - i); week.push([d, all[dayKey(d)]]); }
+    const secs = week.map(([, x]) => daySecs(x)), max = Math.max(...secs, 3600), top = topSites(week.map(([, x]) => x).filter(Boolean))[0];
+    out.push(`<div class="card"><h3>${icon('chart')}${tr('This week')}</h3><div class="big">${fmtDur(secs.reduce((a, b) => a + b, 0))}</div>`
+      + (top ? `<p>${tr('Top site')}: <b data-nt>${esc(top[0])}</b></p>` : '')
+      + `<div class="bars">${secs.map((s, i) => `<i class="${i === 6 ? 'on' : ''}" style="height:${Math.round(s / max * 100)}%"></i>`).join('')}</div>`
+      + `<div class="days">${week.map(([d]) => `<span>${esc(d.toLocaleDateString(LOC(), { weekday: 'narrow' }))}</span>`).join('')}</div>`
+      + `<a class="more" href="wrapped.html">${tr('Open Wrapped')}</a></div>`);
+  }
+  $('cards').innerHTML = out.join('');
+}
+
+let sheetTab = 'look';
+function openSheet(focusCity) {
+  if (focusCity) sheetTab = 'dash';
+  const c = cfg(), s = $('sheet');
+  s.hidden = false;
+  const tabs = `<div class="tabs"><button data-st="look"${sheetTab === 'look' ? ' class="on"' : ''}>${tr('Appearance')}</button><button data-st="dash"${sheetTab === 'dash' ? ' class="on"' : ''}>${tr('Dashboard')}</button></div>`;
+  if (sheetTab === 'look') { s.innerHTML = tabs + '<div id="lookp"></div><input type="file" id="wallf" accept="image/*" hidden>'; bindTabs(s); return lookSheet(); }
+  s.innerHTML = tabs
+    + BLOCKS.map(([k, n]) => `<label>${tr(n)}<input type="checkbox" data-k="${k}"${c[k] ? ' checked' : ''}></label>`).join('')
+    + `<form class="city" id="cityf"><input id="city" placeholder="${esc(tr('City'))}" value="${esc(c.city?.name || '')}"><button class="b">${tr('Done')}</button></form><div class="err" id="cerr"></div>`;
+  s.querySelectorAll('input[type=checkbox]').forEach(x => x.onchange = () => { put('yw-dash', { ...cfg(), [x.dataset.k]: x.checked ? 1 : 0 }); draw(); });
+  $('cityf').onsubmit = async e => {
+    e.preventDefault();
+    const name = $('city').value.trim();
+    if (!name) { put('yw-dash', { ...cfg(), city: null }); s.hidden = true; return draw(); }
+    try {
+      const r = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?count=1&language=${LANG}&name=${encodeURIComponent(name)}`)).json();
+      const g = r.results?.[0];
+      if (!g) { $('cerr').textContent = tr('City not found'); return; }
+      put('yw-dash', { ...cfg(), weather: 1, city: { name: g.name, lat: g.latitude, lon: g.longitude } });
+      s.hidden = true; draw(); weather(true);
+    } catch (err) { $('cerr').textContent = String(err); }
+  };
+  bindTabs(s);
+  if (focusCity) $('city').focus();
+}
+function bindTabs(s) { s.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { sheetTab = b.dataset.st; openSheet(); }); }
+
+// Theme, accent and wallpaper: the same keys as Settings → Appearance (synced through ui.js).
+function lookSheet() {
+  const th = themeGet(), cur = th.acc || (THEMES[th.name] || THEMES.light).acc;
+  let w = null; try { w = localStorage.getItem('yw-wall'); } catch {}
+  const own = w && w !== 'none' && !w.startsWith('w:') ? w : '';
+  const tile = (v, name, bg, inner = '') => `<button class="wp${(w || '') === v || (v === 'own' && own) ? ' on' : ''}" data-w="${v}" title="${esc(tr(name))}"><i style="${bg ? `background-image:url('${bg}')` : ''}">${inner}</i><span>${esc(tr(name))}</span></button>`;
+  $('lookp').innerHTML = `<h5>${tr('Theme')}</h5><div class="ths">`
+    + Object.entries(THEMES).map(([k, t]) => `<button class="th${(th.name || 'light') === k ? ' on' : ''}" data-t="${k}"><i style="background:linear-gradient(135deg,${t.chrome} 0 50%,${t.surface} 50%);box-shadow:inset 0 -5px 0 ${th.acc || t.acc}"></i><span>${tr(t.name)}</span></button>`).join('')
+    + `</div><h5>${tr('Accent color')}</h5><div class="accs">`
+    + ACCENTS.map(a => `<button class="acc${a === cur ? ' on' : ''}" data-c="${a}" style="background:${a}" title="${a}"></button>`).join('')
+    + `<input type="color" id="accc" value="${cur}" title="${esc(tr('Any color'))}"></div>`
+    + `<h5>${tr('Wallpaper')}</h5><div class="wg">${tile('', 'City', 'walls/t/bw_1067.jpg')}${tile('none', 'None', '', icon('x'))}${tile('own', 'Your picture', own, own ? '' : icon('plus'))}`
+    + WALLS.map(x => tile('w:' + x.id, x.name, `walls/t/${x.id}.jpg`)).join('') + `</div>`
+    ;
+  const p = $('lookp');
+  p.querySelectorAll('[data-t]').forEach(b => b.onclick = () => setLook({ name: b.dataset.t, acc: null }));
+  p.querySelectorAll('[data-c]').forEach(b => b.onclick = () => setLook({ acc: b.dataset.c }));
+  $('accc').onchange = e => setLook({ acc: e.target.value });
+  p.querySelectorAll('[data-w]').forEach(b => b.onclick = () => {
+    const v = b.dataset.w;
+    if (v === 'own') return $('wallf').click();
+    try { v ? localStorage.setItem('yw-wall', v) : localStorage.removeItem('yw-wall'); } catch {}
+    wall(); lookSheet();
+  });
+  $('wallf').onchange = () => {
+    const f = $('wallf').files[0];
+    if (!f) return;
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 1920 / img.width), c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      try { localStorage.setItem('yw-wall', c.toDataURL('image/jpeg', 0.85)); } catch { alert(tr('That picture is too big.')); }
+      URL.revokeObjectURL(img.src); $('wallf').value = ''; wall(); lookSheet();
+    };
+    img.src = URL.createObjectURL(f);
+  };
+}
+// Other chrome pages pick this up through the `storage` event (theme.js).
+function setLook(patch) {
+  try { localStorage.setItem('yw-theme', JSON.stringify({ ...themeGet(), ...patch })); } catch {}
+  themeApply(); lookSheet();
+}
+$('cz').onclick = () => $('sheet').hidden ? openSheet() : ($('sheet').hidden = true);
+addEventListener('mousedown', e => {
+  if (!$('sheet').hidden && !e.target.closest('#sheet,#cz,#wx')) $('sheet').hidden = true;
+  if (!$('wxp').hidden && !e.target.closest('#wxp,#wx')) $('wxp').hidden = true;
+});
+
+function draw() { placeholder(); clock(); weather(); cards(); }
+// Ask ui.js for fresh chats/music (it holds the Yuki ID token and answers via yw-dash-data).
+const ask = () => put('yw-dash-req', Date.now());
+draw(); ask();
+setInterval(clock, 10000);
+setInterval(() => { if (!document.hidden) ask(); }, 60000);
+// The browser keeps a new tab ready in the background: catch up when it's shown.
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { ask(); clock(); weather(); cards(); wall(); placeholder(); } });
+addEventListener('langchange', draw);
+addEventListener('storage', e => {
+  if (e.key === 'yw-wall' || e.key === null) wall();
+  if (['yw-dash-data', 'yw-dash', 'yw-acct', 'yw-search', null].includes(e.key)) draw();
+});
+</script>
+</body>
+</html>

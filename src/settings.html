@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="theme.js"></script>
+<script src="i18n.js"></script>
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:var(--page);color:var(--text);font:14px/1.45 "Segoe UI",system-ui,sans-serif}
+body{display:flex;overflow:hidden}
+nav{flex:none;width:230px;padding:28px 12px}
+nav h1{padding:0 12px 18px;font-size:20px;font-weight:700}
+nav a{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:9px;color:var(--text2);text-decoration:none;cursor:pointer}
+nav a:hover{background:var(--line2)}
+nav a.on{background:var(--acc-soft);color:var(--text);font-weight:600}
+nav .ic{width:18px;height:18px}
+main{flex:1;overflow:auto;padding:28px 32px 60px}
+.wrap{max-width:680px}
+section{margin-bottom:28px;scroll-margin-top:20px}
+h2{margin:0 0 10px 4px;font-size:15px;font-weight:600}
+.card{border-radius:12px;background:var(--surface);box-shadow:0 0 0 1px var(--hover)}
+.row{display:flex;align-items:center;gap:16px;min-height:56px;padding:10px 18px}
+.row+.row{border-top:1px solid var(--line2)}
+.row div{flex:1;min-width:0}
+.row small{display:block;color:var(--dim);font-size:12px}
+select,input{height:34px;padding:0 10px;border:1px solid var(--line);border-radius:8px;outline:0;background:var(--surface);font:inherit;color:inherit}
+select:focus,input:focus{border-color:var(--acc)}
+button.btn{height:34px;padding:0 14px;border:0;border-radius:8px;background:var(--soft);font:inherit;font-weight:600;cursor:pointer}
+button.btn:hover{background:var(--hover)}
+button.btn.warn:hover{background:rgba(239,68,68,.14);color:#dc2626}
+.site{display:flex;align-items:center;gap:10px;padding:10px 18px}
+.site+.site{border-top:1px solid var(--line2)}
+.site b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 4px 3px 10px;border-radius:12px;font-size:12px;background:rgba(34,197,94,.15);color:#16a34a}
+.chip.no{background:rgba(239,68,68,.14);color:#dc2626}
+.chip button,.x{display:grid;place-items:center;width:20px;height:20px;border:0;border-radius:50%;background:none;color:inherit;cursor:pointer}
+.chip button:hover,.x:hover{background:rgba(0,0,0,.08)}
+.chip .ic,.x .ic{width:11px;height:11px;stroke-width:2.5}
+.empty{padding:16px 18px;color:var(--dim)}
+#close{position:fixed;top:18px;right:22px;display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:50%;background:none;cursor:pointer}
+#close:hover{background:var(--hover)}
+#close .ic{width:18px;height:18px}
+.add{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--line2)}
+.add input{flex:1}
+#elist img{flex:none;width:20px;height:20px}
+#emsg{flex:none;max-width:45%;color:#16a34a;font-size:13px}
+#emsg.err{color:#dc2626}
+#done,#imd{color:#16a34a;font-size:13px}
+#walls{padding:6px 18px 16px}
+#walls h3{margin:12px 0 8px;color:var(--dim);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.wg{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
+.wp{padding:0;border:0;background:none;color:var(--text);font:inherit;font-size:12px;text-align:left;cursor:pointer}
+.wp i{display:grid;place-items:center;aspect-ratio:16/9;border-radius:9px;background:var(--soft) center/cover;box-shadow:0 0 0 1px var(--line2);color:var(--dim)}
+.wp i .ic{width:20px;height:20px}
+.wp span{display:block;padding:5px 2px 0}
+.wp.on i{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--acc)}
+.themes{display:flex;flex-wrap:wrap;gap:10px;padding:14px 18px}
+.th{width:96px;padding:0;border:2px solid transparent;border-radius:12px;background:none;font:inherit;font-size:12px;color:var(--text);cursor:pointer;overflow:hidden;text-align:center}
+.th i{display:block;height:52px;border-radius:10px 10px 0 0}
+.th span{display:block;padding:5px 0 6px}
+.th.on{border-color:var(--acc)}
+.accs{display:flex;gap:8px;align-items:center}
+.acc{width:24px;height:24px;border:0;border-radius:50%;cursor:pointer;box-shadow:0 0 0 2px var(--surface),0 0 0 3px transparent}
+.acc.on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--text)}
+input[type=color]{width:28px;height:28px;padding:0;border:0;background:none;cursor:pointer}
+.switch{position:relative;flex:none;width:40px;height:22px;border:0;border-radius:11px;background:var(--line);cursor:pointer}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+.switch.on{background:#22c55e}
+#pwl .row{gap:12px;min-height:48px}
+#pwl img{flex:none;width:18px;height:18px;border-radius:4px}
+#pwl code{flex:none;min-width:90px;color:var(--dim);font:13px "Cascadia Mono",Consolas,monospace}
+#pwl button{flex:none;display:grid;place-items:center;width:30px;height:30px;border:0;border-radius:8px;background:none;color:var(--dim);cursor:pointer}
+#pwl button:hover{background:var(--soft);color:var(--text)}
+#pwl button .ic{width:16px;height:16px}
+#pwl .none{padding:16px 18px;color:var(--dim);font-size:13px}
+.switch:disabled{opacity:.4;cursor:default}
+.switch.on::after{transform:translateX(18px)}
+</style>
+</head>
+<body>
+<nav>
+  <h1>Settings</h1>
+  <a data-s="sync"><span data-ic="user"></span>Sync</a>
+  <a data-s="look"><span data-ic="palette"></span>Appearance</a>
+  <a data-s="bookmarks"><span data-ic="star"></span>Bookmarks</a>
+  <a data-s="ext"><span data-ic="puzzle"></span>Extensions</a>
+  <a data-s="moo"><span data-ic="cow"></span>Moo</a>
+  <a data-s="general"><span data-ic="search"></span>Search</a>
+  <a data-s="perf"><span data-ic="moon"></span>Performance</a>
+  <a data-s="pw"><span data-ic="key"></span>Passwords</a>
+  <a data-s="perms"><span data-ic="lock"></span>Site permissions</a>
+  <a data-s="ads"><span data-ic="block"></span>Ad blocker</a>
+  <a data-s="vpn"><span data-ic="shield"></span>VPN</a>
+  <a data-s="privacy"><span data-ic="refresh"></span>Clear data</a>
+  <a data-s="about"><span data-ic="yuki"></span>About YukiWeb</a>
+</nav>
+<main><div class="wrap">
+  <section id="sync">
+    <h2>Sync with Yuki ID</h2>
+    <div class="card">
+      <div class="row"><div id="sacct">Not signed in<small>Sign in with the avatar button in the toolbar, and your bookmarks, look and settings follow you to every PC.</small></div><span id="sst" style="flex:none;color:var(--dim);font-size:13px"></span><button class="btn" id="snow">Sync now</button></div>
+      <div class="row"><div>Bookmarks<small>Bookmarks and the bookmarks bar</small></div><button class="switch" data-g="bm"></button></div>
+      <div class="row"><div>Appearance<small>Theme, accent color and wallpaper</small></div><button class="switch" data-g="look"></button></div>
+      <div class="row"><div>Settings<small>Search engine and sleeping tabs</small></div><button class="switch" data-g="set"></button></div>
+      <div class="row"><div>History<small>Pages you visited, for address bar suggestions. Private tabs are never saved.</small></div><button class="switch" data-g="hist"></button></div>
+    </div>
+  </section>
+  <section id="look">
+    <h2>Appearance</h2>
+    <div class="card">
+      <div class="themes" id="themes"></div>
+      <div class="row"><div>Accent color<small>Buttons, highlights and the active switch</small></div><div class="accs" id="accs" style="flex:none"></div></div>
+      <div class="row"><div>Language<small>Menus and built-in pages</small></div><select id="lang" data-nt><option value="auto"></option><option value="en">English</option><option value="ru">Русский</option><option value="de">Deutsch</option></select></div>
+    </div>
+    <h2 style="margin-top:22px">New tab wallpaper</h2>
+    <div class="card"><div id="walls"></div><input type="file" id="wallf" accept="image/*" hidden></div>
+  </section>
+  <section id="bookmarks">
+    <h2>Bookmarks</h2>
+    <div class="card">
+      <div class="row"><div>Show bookmarks bar<small>Under the address bar · Ctrl+Shift+B</small></div><button class="switch" id="bmbar"></button></div>
+      <div class="row"><div>Import bookmarks<small>Copies your bookmarks bar and other bookmarks; nothing in the other browser changes</small></div>
+        <span id="imd"></span><button class="btn" data-imp="chrome">From Chrome</button><button class="btn" data-imp="edge">From Edge</button></div>
+    </div>
+  </section>
+  <section id="ext">
+    <h2>Extensions</h2>
+    <div class="card">
+      <div id="elist"></div>
+      <div class="add"><input id="eadd" placeholder="Chrome Web Store link" spellcheck="false"><button class="btn" id="eaddb">Add</button></div>
+      <div class="row"><div><small>Or open an extension on chromewebstore.google.com and press "Add to YukiWeb" in the toolbar. Extensions that change pages (ad blockers, dark mode, translators) work best; some that need Chrome's own toolbar or sync may not.</small></div><span id="emsg"></span></div>
+    </div>
+  </section>
+  <section id="moo">
+    <h2>Moo</h2>
+    <div class="card">
+      <div class="row"><div>Show her on pages<small>A small cow lives at the bottom of every website. Click to moo, drag her onto things, stroke her for hearts, Alt+click to plant grass.</small></div><button class="switch" data-moo="enabled"></button></div>
+      <div class="row"><div>Name<small>What she answers to</small></div><input id="mooname" maxlength="24" data-nt></div>
+      <div class="row"><div>Breed</div><select data-moo="breed"><option value="holstein">Holstein</option><option value="jersey">Jersey</option><option value="hereford">Hereford</option><option value="angus">Angus</option><option value="highland">Highland</option></select></div>
+      <div class="row"><div>Size</div><select data-moo="size"><option value="s">Small</option><option value="m">Medium</option><option value="l">Big</option></select></div>
+      <div class="row"><div>Her calf<small>Follows her around and copies her</small></div><button class="switch" data-moo="calf"></button></div>
+      <div class="row"><div>Sounds<small>Moos and the cowbell clink</small></div><button class="switch" data-moo="sound"></button></div>
+      <div class="row"><div>Cowbell</div><button class="switch" data-moo="bell"></button></div>
+      <div class="row"><div>Cow pies</div><button class="switch" data-moo="pies"></button></div>
+      <div class="row"><div>Hide her on<small>Sites, separated by commas, e.g. youtube.com, figma.com</small></div><input id="moohid" placeholder="No sites" data-nt></div>
+    </div>
+  </section>
+  <section id="general">
+    <h2>Search</h2>
+    <div class="card"><div class="row"><div>Search engine<small>Used when what you type isn't an address</small></div>
+      <select id="engine"><option value="yuki">Yuki Search</option><option value="google">Google</option><option value="yandex">Yandex</option><option value="bing">Bing</option><option value="ddg">DuckDuckGo</option></select></div>
+      <div class="row"><div>Default browser<small id="dfs">Links from other apps open in YukiWeb</small></div><button class="btn" id="dfb">Make default</button></div></div>
+  </section>
+  <section id="perf">
+    <h2>Performance</h2>
+    <div class="card"><div class="row"><div>Sleeping tabs<small>Tabs you haven't looked at for a while stop running and free memory. Tabs playing sound stay awake.</small></div>
+      <select id="sleep"><option value="60">After 1 minute</option><option value="300">After 5 minutes</option><option value="1800">After 30 minutes</option><option value="0">Never</option></select></div></div>
+  </section>
+  <section id="pw">
+    <h2>Passwords</h2>
+    <div class="card">
+      <div class="row"><div>Offer to save passwords<small>YukiWeb asks after you log in and fills them in when you click a login field. They're encrypted with your Windows account and stay on this PC.</small></div><button class="switch" id="pwsw"></button></div>
+      <div class="row"><div>Import passwords<small id="pwim">From Edge or Chrome on this PC, or ones YukiWeb saved before version 0.5</small></div><button class="btn" data-imp="edge">Edge</button><button class="btn" data-imp="chrome">Chrome</button><button class="btn" data-imp="webview">YukiWeb 0.4</button></div>
+    </div>
+    <h2 style="margin-top:22px">Saved passwords</h2>
+    <div class="card"><div class="row"><input id="pwq" placeholder="Search passwords" style="flex:1"></div><div id="pwl" data-nt></div></div>
+  </section>
+  <section id="perms">
+    <h2>Site permissions</h2>
+    <div class="card" id="plist"></div>
+  </section>
+  <section id="ads">
+    <h2>Ad blocker</h2>
+    <div class="card">
+      <div class="row"><div>Block ads and trackers<small id="abst">Requests to known ad and tracking servers are stopped before they load. Pages get faster and follow you around less.</small></div><button class="switch" id="absw"></button></div>
+      <div class="row"><div>Allowed sites<small>Ads are shown on these sites and their subdomains. You can also flip a site from the ⋮ menu while you're on it.</small></div></div>
+      <div id="ablist"></div>
+      <div class="add"><input id="abadd" placeholder="example.com" spellcheck="false"><button class="btn" id="abaddb">Add</button></div>
+    </div>
+  </section>
+  <section id="vpn">
+    <h2>VPN sites</h2>
+    <div class="card">
+      <div class="row"><div>Mode<small>Which sites go through the VPN when it's on</small></div>
+        <select id="mode"><option value="">All sites except the list</option><option value="only">Only sites on the list</option></select></div>
+      <div class="row" id="rurow"><div>Russian sites skip the VPN<small>.ru, .su and .рф sites plus Russian services on other domains (Yandex, VK, banks, Gosuslugi). They connect directly, so they see your real address.</small></div><button class="switch" id="rusw"></button></div>
+      <div id="vlist"></div>
+      <div class="add"><input id="vadd" placeholder="example.com" spellcheck="false"><button class="btn" id="vaddb">Add</button></div>
+    </div>
+  </section>
+  <section id="privacy">
+    <h2>Clear data</h2>
+    <div class="card"><div class="row"><div>Clear browsing data<small>History, cookies, cache and saved site data for every site. You'll be signed out of websites; your Yuki ID in YukiWeb stays.</small></div>
+      <span id="done"></span><button class="btn warn" id="clear">Clear</button></div></div>
+  </section>
+  <section id="about">
+    <h2>About</h2>
+    <div class="card"><div class="row"><div id="ver">YukiWeb<small>Updates download by themselves; you'll see "Restart to update" when one is ready.</small></div><button class="btn" id="wn">What's new</button></div></div>
+  </section>
+</div></main>
+<button id="close" title="Close settings (Esc)"></button>
+<script src="icons.js"></script>
+<script>
+const { invoke } = __TAURI__.core;
+const { listen, emitTo } = __TAURI__.event;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
+const store = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } };
+const keep = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch {} };
+document.querySelectorAll('[data-ic]').forEach(e => e.outerHTML = icon(e.dataset.ic));
+$('close').innerHTML = icon('x');
+$('close').onclick = () => emitTo('ui', 'settings-close');
+addEventListener('keydown', e => { if (e.key === 'Escape') emitTo('ui', 'settings-close'); });
+
+// One section at a time; the last one you looked at opens next time.
+const links = [...document.querySelectorAll('nav a')];
+function tab(id) {
+  if (!$(id) || $(id).tagName !== 'SECTION') id = links[0].dataset.s;
+  links.forEach(a => { a.classList.toggle('on', a.dataset.s === id); $(a.dataset.s).hidden = a.dataset.s !== id; });
+  document.querySelector('main').scrollTop = 0;
+  keep('yw-stab', id);
+}
+links.forEach(a => a.onclick = () => tab(a.dataset.s));
+tab(store('yw-stab', 'sync'));
+
+$('engine').value = store('yw-search', 'yuki');
+$('engine').onchange = () => keep('yw-search', $('engine').value);
+$('sleep').value = String(store('yw-sleep', 300));
+$('sleep').onchange = () => { const secs = +$('sleep').value; keep('yw-sleep', secs); invoke('set_sleep', { secs }); };
+
+const KINDS = { camera: 'Camera', mic: 'Microphone', location: 'Location', notifications: 'Notifications', clipboard: 'Clipboard', downloads: 'Multiple downloads', files: 'Files', windows: 'Window management', fonts: 'Fonts', sensors: 'Sensors' };
+async function perms() {
+  const p = await invoke('perm_list'), sites = Object.keys(p).sort();
+  $('plist').innerHTML = sites.length ? sites.map(o => `<div class="site"><b>${esc(o.replace(/^https?:\/\//, ''))}</b>${Object.entries(p[o]).map(([k, ok]) =>
+    `<span class="chip${ok ? '' : ' no'}" title="${ok ? 'Allowed' : 'Blocked'}">${esc(KINDS[k] || k)}<button data-o="${esc(o)}" data-k="${esc(k)}" title="Forget">${icon('x')}</button></span>`).join('')}<button class="x" data-o="${esc(o)}" title="Forget this site">${icon('x')}</button></div>`).join('')
+    : '<div class="empty">Sites you allow or block (camera, location, notifications…) show up here.</div>';
+}
+$('plist').onclick = async e => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  await invoke('perm_forget', { origin: b.dataset.o, kind: b.dataset.k || null });
+  perms();
+};
+
+let v = null;
+const clean = d => d.trim().toLowerCase().replace(/^[a-z]+:\/\//, '').replace(/[\/:].*$/, '').replace(/^www\./, '');
+async function vpn() {
+  [v] = await invoke('vpn_get');
+  $('mode').value = v.mode;
+  $('rurow').hidden = v.mode === 'only';
+  $('rusw').classList.toggle('on', !!v.ru);
+  $('vlist').innerHTML = v.sites.map((d, i) => `<div class="site"><b>${esc(d)}</b><button class="x" data-i="${i}" title="Remove">${icon('x')}</button></div>`).join('')
+    || `<div class="empty">No sites yet. You can also flip a site from the VPN button while you're on it.</div>`;
+}
+const saveVpn = async () => { try { await invoke('vpn_set', { v }); } catch {} vpn(); };
+$('mode').onchange = () => { v.mode = $('mode').value; saveVpn(); };
+$('rusw').onclick = () => { v.ru = !v.ru; saveVpn(); };
+$('vlist').onclick = e => { const b = e.target.closest('button'); if (b) { v.sites.splice(+b.dataset.i, 1); saveVpn(); } };
+$('vaddb').onclick = () => {
+  const d = clean($('vadd').value);
+  $('vadd').value = '';
+  if (d.includes('.') && !v.sites.includes(d)) { v.sites.push(d); saveVpn(); }
+};
+$('vadd').onkeydown = e => { if (e.key === 'Enter') $('vaddb').onclick(); };
+
+// Ad blocker (src-tauri/src/ab.rs).
+let ab = null;
+async function abLoad() {
+  ab = await invoke('ab_get');
+  $('absw').classList.toggle('on', ab.on);
+  $('abst').textContent = t('{0} ads and trackers blocked so far · {1} rules', ab.total.toLocaleString(), ab.rules.toLocaleString());
+  $('ablist').innerHTML = ab.allow.map((d, i) => `<div class="site"><b>${esc(d)}</b><button class="x" data-i="${i}" title="Remove">${icon('x')}</button></div>`).join('')
+    || `<div class="empty">${t('No sites. Ads are blocked everywhere.')}</div>`;
+}
+const abSave = async () => { await invoke('ab_set', { on: ab.on, allow: ab.allow }).catch(() => {}); abLoad(); };
+$('absw').onclick = () => { ab.on = !ab.on; abSave(); };
+$('ablist').onclick = e => { const b = e.target.closest('button'); if (b) { ab.allow.splice(+b.dataset.i, 1); abSave(); } };
+$('abaddb').onclick = () => {
+  const d = clean($('abadd').value);
+  $('abadd').value = '';
+  if (d.includes('.') && !ab.allow.includes(d)) { ab.allow.push(d); abSave(); }
+};
+$('abadd').onkeydown = e => { if (e.key === 'Enter') $('abaddb').onclick(); };
+abLoad();
+
+// Clearing wipes this origin's localStorage too: keep YukiWeb's own settings, tabs and
+// sign-in — everything of ours except history.
+$('clear').onclick = async () => {
+  const saved = {};
+  for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('yw-') && k !== 'yw-hist') saved[k] = localStorage.getItem(k); }
+  $('clear').disabled = true;
+  try { await invoke('clear_data'); } catch {}
+  localStorage.clear();
+  for (const [k, x] of Object.entries(saved)) localStorage.setItem(k, x);
+  emitTo('ui', 'hist-cleared');
+  $('clear').disabled = false;
+  $('done').textContent = 'Cleared';
+  setTimeout(() => { $('done').textContent = ''; }, 3000);
+};
+
+// --- Appearance ---
+function look() {
+  const th = themeGet();
+  $('themes').innerHTML = Object.entries(THEMES).map(([k, t]) =>
+    `<button class="th${(th.name || 'light') === k ? ' on' : ''}" data-t="${k}"><i style="background:linear-gradient(135deg,${t.chrome} 0 50%,${t.surface} 50%);box-shadow:inset 0 -6px 0 ${th.acc || t.acc}"></i><span>${t.name}</span></button>`).join('');
+  const cur = th.acc || (THEMES[th.name] || THEMES.light).acc;
+  $('accs').innerHTML = ACCENTS.map(c => `<button class="acc${c === cur ? ' on' : ''}" data-c="${c}" style="background:${c}" title="${c}"></button>`).join('')
+    + `<input type="color" id="accc" value="${cur}" title="Any color">`;
+  $('accc').oninput = e => setTheme({ acc: e.target.value });
+  let w = null; try { w = localStorage.getItem('yw-wall'); } catch {}
+  const own = w && w !== 'none' && !w.startsWith('w:') ? w : '';
+  const tile = (v, name, bg, inner = '') => `<button class="wp${(w || '') === v || (v === 'own' && own) ? ' on' : ''}" data-w="${v}"><i style="${bg ? `background-image:url('${bg}')` : ''}">${inner}</i><span>${name}</span></button>`;
+  $('walls').innerHTML = `<div class="wg" style="margin-top:12px">${tile('', 'City', 'walls/t/bw_1067.jpg')}${tile('none', 'None', '', icon('x'))}${tile('own', 'Your picture', own, own ? '' : icon('plus'))}</div>`
+    + `<h3>Black and white</h3><div class="wg">${WALLS.filter(x => x.id.startsWith('bw')).map(x => tile('w:' + x.id, x.name, `walls/t/${x.id}.jpg`)).join('')}</div>`
+    + `<h3>Color</h3><div class="wg">${WALLS.filter(x => x.id.startsWith('c_')).map(x => tile('w:' + x.id, x.name, `walls/t/${x.id}.jpg`)).join('')}</div>`;
+  $('bmbar').classList.toggle('on', !!store('yw-bmbar', false));
+}
+// Writing yw-theme here fires `storage` in every other chrome page, which re-applies it.
+function setTheme(patch) { keep('yw-theme', { ...themeGet(), ...patch }); themeApply(); look(); }
+$('themes').onclick = e => { const b = e.target.closest('[data-t]'); if (b) setTheme({ name: b.dataset.t, acc: null }); };
+$('accs').onclick = e => { const b = e.target.closest('[data-c]'); if (b) setTheme({ acc: b.dataset.c }); };
+// Writing yw-wall fires `storage` in open new tabs, which switch right away.
+$('walls').onclick = e => {
+  const v = e.target.closest('[data-w]')?.dataset.w;
+  if (v == null) return;
+  if (v === 'own') return $('wallf').click();
+  try { v ? localStorage.setItem('yw-wall', v) : localStorage.removeItem('yw-wall'); } catch {}
+  look();
+};
+// Shrink the picture to at most 1920px wide so it fits in localStorage.
+$('wallf').onchange = () => {
+  const f = $('wallf').files[0];
+  if (!f) return look();
+  const img = new Image();
+  img.onload = () => {
+    const k = Math.min(1, 1920 / img.width), c = document.createElement('canvas');
+    c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    try { localStorage.setItem('yw-wall', c.toDataURL('image/jpeg', 0.85)); } catch { alert(tr('That picture is too big.')); }
+    URL.revokeObjectURL(img.src); $('wallf').value = ''; look();
+  };
+  img.src = URL.createObjectURL(f);
+};
+// Moo (src/moo.js in every tab); the UI pushes yw-moo changes to open pages.
+const MOO = { enabled: true, name: 'Clarabelle', sound: true, pies: true, size: 'm', breed: 'holstein', bell: true, calf: false, hiddenSites: [] };
+const moo = () => ({ ...MOO, ...store('yw-moo', {}) });
+const mooSet = (k, v) => { keep('yw-moo', { ...moo(), [k]: v }); mooDraw(); };
+function mooDraw() {
+  const m = moo();
+  document.querySelectorAll('[data-moo]').forEach(e => e.tagName === 'SELECT' ? e.value = m[e.dataset.moo] : e.classList.toggle('on', !!m[e.dataset.moo]));
+  if (document.activeElement !== $('mooname')) $('mooname').value = m.name;
+  if (document.activeElement !== $('moohid')) $('moohid').value = m.hiddenSites.filter(h => !(h.startsWith('www.') && m.hiddenSites.includes(h.slice(4)))).join(', ');
+}
+document.querySelectorAll('[data-moo]').forEach(e => e.tagName === 'SELECT'
+  ? e.onchange = () => mooSet(e.dataset.moo, e.value)
+  : e.onclick = () => mooSet(e.dataset.moo, !moo()[e.dataset.moo]));
+let mooT;
+$('mooname').oninput = () => { clearTimeout(mooT); mooT = setTimeout(() => mooSet('name', $('mooname').value.trim() || MOO.name), 400); };
+$('moohid').onchange = () => mooSet('hiddenSites', [...new Set($('moohid').value.split(/[\s,]+/).map(h => h.toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '')).filter(Boolean).flatMap(h => h.startsWith('www.') ? [h] : [h, 'www.' + h]))]);
+mooDraw();
+$('bmbar').onclick = () => { keep('yw-bmbar', !store('yw-bmbar', false)); look(); };
+
+// --- Bookmark import (Chromium's Bookmarks file): top-level links stay links, folders flatten into one level ---
+function convert(node) {
+  const links = [], walk = n => n.type === 'url' ? links.push({ u: n.url, t: n.name, i: '' }) : (n.children || []).forEach(walk);
+  return (node?.children || []).map(n => n.type === 'url' ? { u: n.url, t: n.name, i: '' } : (links.length = 0, walk(n), { t: n.name, c: [...links] }))
+    .filter(b => b.u || b.c.length);
+}
+document.querySelectorAll('[data-imp]').forEach(b => b.onclick = async () => {
+  $('imd').style.color = '';
+  try {
+    const j = await invoke('import_bookmarks', { browser: b.dataset.imp }), r = j.roots || {};
+    const add = [...convert(r.bookmark_bar)];
+    const other = convert(r.other);
+    if (other.length) add.push({ t: 'Other bookmarks', c: other.flatMap(x => x.c || [x]) });
+    const bms = store('yw-bm', []), have = new Set(bms.flatMap(x => x.c ? x.c : [x]).map(x => x.u));
+    let n = 0;
+    for (const x of add) {
+      if (x.c) { const c = x.c.filter(y => !have.has(y.u)); n += c.length; if (c.length) bms.push({ t: x.t, c }); }
+      else if (!have.has(x.u)) { n++; bms.push(x); }
+    }
+    keep('yw-bm', bms);
+    $('imd').textContent = n ? t('Imported {0}', n) : 'Nothing new';
+  } catch (e) {
+    $('imd').style.color = '#dc2626';
+    $('imd').textContent = String(e);
+  }
+});
+
+// --- Extensions ---
+let exts = [];
+function extRender() {
+  $('elist').innerHTML = exts.length ? exts.map((e, i) => `<div class="site">${e.icon ? `<img src="${esc(e.icon)}">` : icon('puzzle')}<b>${esc(e.name)} <small style="display:inline;color:var(--dim);font-weight:400">${esc(e.ver)}</small></b>${e.options ? `<button class="btn" data-o="${i}">Options</button>` : ''}<button class="switch${e.on ? ' on' : ''}" data-t="${i}" title="Turn on/off"></button><button class="x" data-r="${i}" title="Remove">${icon('x')}</button></div>`).join('')
+    : '<div class="empty">No extensions yet.</div>';
+}
+$('elist').onclick = async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const x = exts[+(b.dataset.t ?? b.dataset.r ?? b.dataset.o)];
+  if (b.dataset.o != null) { emitTo('ui', 'open', `chrome-extension://${x.id}/${x.options}`); emitTo('ui', 'settings-close'); }
+  else if (b.dataset.t != null) await invoke('ext_toggle', { id: x.id, on: !x.on }).catch(err => msg(String(err), true));
+  else if (confirm(t('Remove {0}?', x.name))) await invoke('ext_remove', { id: x.id }).catch(err => msg(String(err), true));
+};
+function msg(t, err) { $('emsg').textContent = t; $('emsg').classList.toggle('err', !!err); setTimeout(() => { if ($('emsg').textContent === t) $('emsg').textContent = ''; }, 6000); }
+$('eaddb').onclick = () => {
+  const id = ($('eadd').value.match(/([a-p]{32})/) || [])[1];
+  if (!id) return msg('Paste a chromewebstore.google.com link', true);
+  $('eadd').value = ''; msg('Adding…');
+  emitTo('ui', 'ext-install', id);
+};
+$('eadd').onkeydown = e => { if (e.key === 'Enter') $('eaddb').onclick(); };
+listen('ext-msg', ({ payload }) => msg(payload.replace(/^Error: /, ''), payload.startsWith('Error')));
+listen('ext', ({ payload }) => { exts = payload; extRender(); });
+listen('settings-go', ({ payload }) => tab(payload));
+invoke('ext_list').then(l => { exts = l; extRender(); });
+
+__TAURI__.app.getVersion().then(x => { $('ver').firstChild.textContent = 'YukiWeb ' + x; });
+
+// --- Passwords (vault.rs). The list has no passwords in it; the eye asks for one at a time.
+let pws = [];
+const pwOn = () => !store('yw-pw-off', false);
+async function pwLoad() {
+  pws = await invoke('pw_list').catch(() => []);
+  $('pwsw').classList.toggle('on', pwOn());
+  pwDraw();
+}
+function pwDraw() {
+  const k = $('pwq').value.trim().toLowerCase();
+  const list = pws.filter(p => !k || p.origin.toLowerCase().includes(k) || p.user.toLowerCase().includes(k)).sort((a, b) => a.origin.localeCompare(b.origin));
+  $('pwl').innerHTML = list.length ? list.map(p => {
+    const h = p.origin.replace(/^https?:\/\//, '');
+    return `<div class="row" data-id="${p.id}"><img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(h)}&sz=32" alt=""><div>${esc(h.replace(/^www\./, ''))}<small>${esc(p.user || '—')}</small></div><code>••••••••</code>`
+      + `<button data-a="show" title="${esc(tr('Show'))}">${icon('eye')}</button><button data-a="copy" title="${esc(tr('Copy'))}">${icon('copy')}</button><button data-a="del" title="${esc(tr('Remove'))}">${icon('x')}</button></div>`;
+  }).join('') : `<div class="none">${esc(tr(pws.length ? 'Nothing found' : 'No saved passwords yet.'))}</div>`;
+}
+$('pwq').oninput = pwDraw;
+$('pwsw').onclick = () => { keep('yw-pw-off', pwOn()); $('pwsw').classList.toggle('on', pwOn()); };
+$('pwl').onclick = async e => {
+  const b = e.target.closest('button'), row = b && b.closest('[data-id]');
+  if (!row) return;
+  const id = +row.dataset.id, code = row.querySelector('code');
+  if (b.dataset.a === 'show') code.textContent = code.textContent.startsWith('•') ? await invoke('pw_reveal', { id }).catch(String) : '••••••••';
+  else if (b.dataset.a === 'copy') { await navigator.clipboard.writeText(await invoke('pw_reveal', { id })); b.innerHTML = icon('check'); setTimeout(() => { b.innerHTML = icon('copy'); }, 1200); }
+  else if (b.dataset.a === 'del' && confirm(t('Remove {0}?', row.querySelector('div').firstChild.textContent))) { await invoke('pw_delete', { id }); pwLoad(); }
+};
+document.querySelectorAll('[data-imp]').forEach(b => b.onclick = async () => {
+  $('pwim').textContent = tr('Importing…');
+  try { const [n, skip] = await invoke('pw_import', { from: b.dataset.imp }); $('pwim').textContent = t('Imported {0}', n) + (skip ? ' · ' + t('{0} could not be read', skip) : ''); }
+  catch (e) { $('pwim').textContent = String(e); }
+  pwLoad();
+});
+pwLoad();
+// Language: "auto" follows Windows. Every page (and the error pages via Rust) follows the storage event.
+function langUi() {
+  let v = 'auto'; try { v = JSON.parse(localStorage.getItem('yw-lang')) || 'auto'; } catch {}
+  $('lang').value = v;
+  $('lang').options[0].textContent = tr('Automatic');
+}
+langUi();
+addEventListener('langchange', langUi);
+$('lang').onchange = () => {
+  try { localStorage.setItem('yw-lang', JSON.stringify($('lang').value)); } catch {}
+  i18nApply();
+};
+// Windows only lets the user pick the default browser, so this opens its page; re-checks on return.
+async function dflt() {
+  const on = await invoke('browser_default').catch(() => false);
+  $('dfs').textContent = on ? 'YukiWeb is your default browser' : 'Links from other apps open in YukiWeb';
+  $('dfb').hidden = on;
+}
+$('wn').onclick = () => emitTo('ui', 'menu', ['whatsnew']);
+$('dfb').onclick = () => invoke('browser_make_default');
+addEventListener('focus', dflt);
+// --- Sync (ui.js does the syncing; this only shows it and flips the switches) ---
+function sync() {
+  const a = store('yw-acct', null), p = a?.profile, on = { bm: true, look: true, set: true, hist: true, ...store('yw-sync-on', {}) };
+  $('sacct').firstChild.textContent = p ? t('Signed in as {0}', p.display_name || p.username) : 'Not signed in';
+  $('sacct').querySelector('small').hidden = !!p;
+  $('snow').hidden = !p;
+  $('sst').textContent = p ? localStorage.getItem('yw-sync-status') || '' : '';
+  document.querySelectorAll('[data-g]').forEach(b => { b.classList.toggle('on', on[b.dataset.g]); b.disabled = !p; });
+}
+document.querySelectorAll('[data-g]').forEach(b => b.onclick = () => {
+  const on = { bm: true, look: true, set: true, hist: true, ...store('yw-sync-on', {}) };
+  on[b.dataset.g] = !on[b.dataset.g];
+  keep('yw-sync-on', on); sync();
+  if (on[b.dataset.g]) emitTo('ui', 'sync-now');
+});
+$('snow').onclick = () => emitTo('ui', 'sync-now');
+listen('sync-status', ({ payload }) => { $('sst').textContent = payload; });
+addEventListener('storage', e => { if (e.key === 'yw-acct') sync(); });
+
+function refresh() { look(); sync(); perms(); vpn(); dflt(); }
+listen('settings-open', refresh);
+refresh();
+</script>
+</body>
+</html>

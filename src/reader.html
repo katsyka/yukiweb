@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Reader</title>
+<script src="theme.js"></script>
+<script src="i18n.js"></script>
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:var(--page);color:var(--text);font:15px "Segoe UI",system-ui,sans-serif}
+.bar{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:6px;padding:10px 16px;background:var(--page);border-bottom:1px solid var(--line2)}
+.bar button{height:32px;padding:0 12px;border:1px solid var(--line);border-radius:16px;background:var(--surface);color:var(--text);font:600 13px "Segoe UI",system-ui,sans-serif;cursor:pointer}
+.bar button:hover{border-color:var(--line3)}
+.bar button.on{border-color:var(--acc);background:var(--acc);color:var(--on-acc)}
+.bar .grow{flex:1}
+header{width:min(720px,100%);margin:0 auto;padding:48px 20px 8px}
+header a{color:var(--dim);font-size:14px;text-decoration:none}
+header a:hover{color:var(--text)}
+h1{margin:12px 0 10px;font-size:clamp(28px,4.4vw,42px);line-height:1.15;letter-spacing:-.02em}
+.meta{color:var(--dim);font-size:14px}
+iframe{display:block;width:min(720px,100%);margin:0 auto 80px;border:0}
+.none{width:min(720px,100%);margin:80px auto;padding:0 20px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="bar">
+  <button id="back">← Back to page</button>
+  <span class="grow"></span>
+  <button id="sm" title="Smaller text">A−</button>
+  <button id="lg" title="Larger text">A+</button>
+  <button id="serif">Serif</button>
+  <button id="sans">Sans</button>
+</div>
+<header id="hd"></header>
+<iframe id="f" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" title="Article"></iframe>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => `&#${c.charCodeAt(0)};`);
+const get = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } };
+let A = get('yw-reader', null), cfg = { size: 19, font: 'serif', ...get('yw-reader-cfg', {}) };
+$('back').onclick = () => history.back();
+
+function draw() {
+  if (!A?.html) { $('hd').innerHTML = ''; $('f').hidden = true; document.body.insertAdjacentHTML('beforeend', `<p class="none">${esc(tr('This page has no article to read.'))}</p>`); return; }
+  document.title = A.title || 'Reader';
+  let host = ''; try { host = new URL(A.url).host.replace(/^www\./, ''); } catch {}
+  const mins = Math.max(1, Math.round((A.len || 0) / 1100));
+  $('hd').innerHTML = `<a href="${esc(A.url)}" data-nt>${esc(A.site || host)}</a><h1 data-nt>${esc(A.title)}</h1>`
+    + `<div class="meta">${A.byline ? `<span data-nt>${esc(A.byline)}</span> · ` : ''}${esc(t('{0} min read', mins))}</div>`;
+  $('serif').classList.toggle('on', cfg.font === 'serif');
+  $('sans').classList.toggle('on', cfg.font === 'sans');
+  const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue(n).trim();
+  const font = cfg.font === 'serif' ? 'Georgia, "Times New Roman", serif' : '"Segoe UI", system-ui, sans-serif';
+  // No allow-scripts: nothing in the article can run. Links open in new tabs.
+  $('f').srcdoc = `<!doctype html><html lang="${esc(A.lang || '')}"><head><meta charset="utf-8"><base href="${esc(A.url)}" target="_blank"><style>
+    body{margin:0;padding:8px 20px 40px;background:${v('--page')};color:${v('--text')};font:${cfg.size}px/1.7 ${font};overflow:hidden}
+    a{color:inherit;text-decoration-color:${v('--acc')};text-decoration-thickness:2px;text-underline-offset:3px}
+    img,video,figure,picture,svg{max-width:100%;height:auto}figure{margin:28px 0}figcaption{color:${v('--dim')};font-size:.8em}
+    h1,h2,h3,h4{line-height:1.25;margin:1.6em 0 .5em}p,ul,ol,blockquote,pre{margin:0 0 1.1em}
+    blockquote{margin-left:0;padding-left:18px;border-left:3px solid ${v('--acc')};color:${v('--text2')}}
+    pre,code{font-family:"Cascadia Mono",Consolas,monospace;font-size:.85em}pre{overflow:auto;padding:14px;border-radius:10px;background:${v('--soft')}}
+    table{border-collapse:collapse;max-width:100%}td,th{padding:6px 10px;border:1px solid ${v('--line')}}
+  </style></head><body>${A.html}</body></html>`;
+}
+// The frame grows with its article (same origin, so we can measure it).
+function fit() { try { const d = $('f').contentDocument; if (d?.body) $('f').style.height = d.documentElement.scrollHeight + 'px'; } catch {} }
+$('f').onload = () => {
+  fit();
+  try { new ResizeObserver(fit).observe($('f').contentDocument.body); } catch {}
+  $('f').contentDocument.querySelectorAll('img').forEach(i => i.addEventListener('load', fit));
+};
+const save = () => { try { localStorage.setItem('yw-reader-cfg', JSON.stringify(cfg)); } catch {} draw(); };
+$('sm').onclick = () => { cfg.size = Math.max(14, cfg.size - 1); save(); };
+$('lg').onclick = () => { cfg.size = Math.min(28, cfg.size + 1); save(); };
+$('serif').onclick = () => { cfg.font = 'serif'; save(); };
+$('sans').onclick = () => { cfg.font = 'sans'; save(); };
+draw();
+addEventListener('langchange', draw);
+addEventListener('storage', e => { if (e.key === 'yw-theme') draw(); });
+</script>
+</body>
+</html>

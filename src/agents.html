@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Agents</title>
+<script src="theme.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Agents panel: a consumer surface. Colors derive from the browser theme (theme.js): the accent
+   drives the backdrop gradient, the orb and the send button. Surfaces are solid, depth comes from shadow. */
+:root{
+  --fg:var(--text);--fg2:var(--text2);--mut:var(--dim);
+  --sf:var(--surface);--sf2:var(--soft);--edge:rgba(20,22,30,.06);
+  --sh:0 1px 2px rgba(30,30,60,.06),0 10px 26px -14px rgba(30,30,60,.28);
+  --sh2:0 2px 4px rgba(30,30,60,.06),0 24px 44px -20px rgba(30,30,60,.4);
+  --warn:#8f5200;--warn-bg:#fff1d6;--ok:#2b6a36;--ok-bg:#e6f5e9;--err:#b42318;
+  --b1:color-mix(in oklab,var(--acc) 50%,#fff);--b2:#cfdcff;--b3:#ffd6e4;
+  --ease:cubic-bezier(.23,1,.32,1);
+  --font:"Onest","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+}
+html.dark{
+  --sf:#2a2b31;--sf2:#33343b;--edge:rgba(255,255,255,.06);
+  --sh:0 1px 0 rgba(255,255,255,.04) inset,0 10px 26px -14px rgba(0,0,0,.7);
+  --sh2:0 1px 0 rgba(255,255,255,.05) inset,0 24px 44px -20px rgba(0,0,0,.85);
+  --warn:#f2b660;--warn-bg:#3d3020;--ok:#86d494;--ok-bg:#1f3324;--err:#ff8f86;
+  --b1:color-mix(in oklab,var(--acc) 28%,#1c1d22);--b2:#1d2645;--b3:#341d2b;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%}
+body{position:relative;display:flex;flex-direction:column;color:var(--fg);font:14px/1.5 var(--font);overflow:hidden;background:var(--page);-webkit-font-smoothing:antialiased}
+/* Slow drifting color field behind everything. */
+body::before{content:'';position:fixed;inset:-30%;z-index:-1;pointer-events:none;
+  background:radial-gradient(40% 35% at 20% 18%,var(--b1),transparent 70%),radial-gradient(38% 34% at 85% 12%,var(--b2),transparent 70%),radial-gradient(45% 40% at 70% 85%,var(--b3),transparent 70%),radial-gradient(35% 30% at 10% 90%,var(--b2),transparent 70%);
+  animation:drift 28s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate(4%,-3%) rotate(8deg) scale(1.05)}}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--acc-text);outline-offset:2px}
+.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.num{font-variant-numeric:tabular-nums}
+.sf{background:var(--sf);box-shadow:var(--sh)}
+
+/* Lead avatar: the same gradient sparkle as the header mark, smaller. */
+.lav{width:28px;height:28px;flex:none;display:grid;place-items:center;border-radius:9px;background:linear-gradient(140deg,var(--acc),color-mix(in oklab,var(--acc) 55%,#ff7aa8));color:var(--on-acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+.lav .i{width:15px;height:15px;stroke-width:2}
+
+/* 3D ASCII band above the input: a turning torus drawn in characters, glowing on the backdrop. */
+#ascii{position:relative;flex:none;width:100%;height:140px;margin:0 0 14px;display:grid;place-items:center;pointer-events:none}
+#ascii::before{content:'';position:absolute;left:50%;top:55%;width:72%;height:120%;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(closest-side,color-mix(in oklab,var(--acc) 55%,transparent),color-mix(in oklab,#ff8fb3 25%,transparent) 55%,transparent);filter:blur(18px);opacity:.75;transition:opacity .6s var(--ease)}
+#ascii.busy::before{opacity:1}
+#ascii pre{position:relative;margin:0;font:700 8px/6px "Cascadia Mono",Consolas,ui-monospace,monospace;letter-spacing:.5px;white-space:pre;color:color-mix(in oklab,var(--acc) 62%,var(--fg));text-shadow:0 0 6px color-mix(in oklab,var(--acc) 70%,transparent)}
+html.dark #ascii pre{color:color-mix(in oklab,var(--acc) 85%,#fff)}
+
+/* Header. */
+#grip{position:fixed;left:0;top:0;bottom:0;width:5px;cursor:ew-resize;z-index:5}
+#grip:hover,#grip.on{background:color-mix(in oklab,var(--acc) 60%,transparent)}
+header{flex:none;display:flex;align-items:center;gap:8px;padding:14px 12px 10px 18px}
+.mark{width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(140deg,var(--acc),color-mix(in oklab,var(--acc) 55%,#ff7aa8));color:var(--on-acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 14px -6px color-mix(in oklab,var(--acc) 80%,transparent)}
+.mark .i{stroke-width:2}
+.ttl{flex:1;min-width:0;margin-left:2px}
+h1{margin:0;font-size:17px;font-weight:650;letter-spacing:-.01em;line-height:1.2}
+#count{display:block;color:var(--fg2);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rb{width:36px;height:36px;display:grid;place-items:center;border:0;border-radius:50%;color:var(--fg2);transition:transform .15s var(--ease),color .15s}
+.rb:hover{color:var(--fg)}
+.rb:active,.pill:active,.btn:active,.sug:active,#send:active,.chip:active{transform:scale(.96)}
+.rb[aria-pressed=true]{color:var(--on-acc);background:var(--acc)}
+.pill{height:36px;display:inline-flex;align-items:center;gap:6px;padding:0 12px 0 14px;border:0;border-radius:18px;font-size:13px;font-weight:600;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;transition:transform .15s var(--ease)}
+.pill .i{width:14px;height:14px;stroke-width:2.2;color:var(--mut)}
+
+/* Budget meter. */
+.meter{flex:none;display:flex;align-items:center;gap:10px;margin:0 18px 6px;font-size:12.5px;color:var(--fg2)}
+.meter .bar{flex:1;height:6px;border-radius:3px;background:color-mix(in oklab,var(--fg) 10%,transparent);overflow:hidden}
+.meter .bar i{display:block;height:100%;width:100%;transform-origin:left;transform:scaleX(0);border-radius:3px;background:linear-gradient(90deg,color-mix(in oklab,var(--acc) 70%,#ff8fb3),var(--acc));transition:transform .4s var(--ease)}
+.meter .bar i.hot{background:linear-gradient(90deg,#ffb547,#ff6b5a)}
+#spend b{color:var(--fg);font-weight:600}
+.lk{border:0;background:none;padding:2px 0;font-size:12.5px;font-weight:600;color:var(--fg2)}
+.lk:hover{color:var(--fg)}
+
+/* Popover (models). */
+.pop{position:fixed;top:58px;right:12px;z-index:6;width:min(320px,calc(100vw - 24px));padding:14px;border-radius:18px;display:flex;flex-direction:column;gap:6px;transform-origin:top right;animation:pop .18s var(--ease);box-shadow:var(--sh2)}
+@keyframes pop{from{opacity:0;transform:scale(.95) translateY(-4px)}}
+.pop label,.fld label{font-size:12.5px;font-weight:600;color:var(--fg2)}
+.pop label:not(:first-child){margin-top:6px}
+.pop p{margin:4px 0 0;font-size:12px;color:var(--mut)}
+select,.fld input{height:38px;padding:0 10px;border:0;border-radius:12px;background:var(--sf2);min-width:0}
+.two{display:grid;grid-template-columns:minmax(0,1fr) 100px;gap:6px}
+
+/* Main column. */
+main{flex:1;min-height:0;display:flex;flex-direction:column}
+
+/* Agents: a horizontal strip of cards that tilt toward the pointer. */
+.strip-h{display:flex;align-items:baseline;justify-content:space-between;padding:8px 18px 0}
+.strip-h h2{margin:0;font-size:13px;font-weight:650;color:var(--fg2)}
+#list{flex:none;display:flex;gap:12px;margin:0;padding:12px 18px 20px;list-style:none;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:18px;scrollbar-width:none;perspective:1000px}
+#list::-webkit-scrollbar{display:none}
+#list:empty{display:none}
+.ag{flex:none;width:248px;scroll-snap-align:start;border-radius:20px;padding:8px;transform-style:preserve-3d;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .4s var(--ease),box-shadow .2s var(--ease);cursor:pointer}
+.ag:hover{box-shadow:var(--sh2)}
+.ag.need{box-shadow:0 0 0 2px #f2a23a,var(--sh2)}
+.shot{position:relative;aspect-ratio:16/10;border-radius:14px;overflow:hidden;background:var(--sf2);transform:translateZ(18px);box-shadow:0 12px 22px -14px rgba(0,0,0,.45)}
+.shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top left}
+.shot img:not([src]){display:none}
+.shot .ph{position:absolute;inset:0;display:grid;place-items:center;color:var(--mut);font-size:12.5px;overflow:hidden}
+.shot .ph::before{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,color-mix(in oklab,var(--sf) 70%,transparent),transparent 70%);animation:shine 1.6s linear infinite}
+@keyframes shine{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.badge{position:absolute;left:8px;top:8px;display:flex;align-items:center;gap:5px;height:24px;padding:0 9px 0 7px;border-radius:12px;font-size:11.5px;font-weight:600;color:#fbfbfd;background:rgba(20,20,28,.72)}
+.badge .i{width:13px;height:13px;stroke-width:2}
+.cur{position:absolute;left:0;top:0;display:flex;gap:1px;pointer-events:none;transition:transform .35s var(--ease)}
+.cur span{margin-top:11px;padding:1px 7px;border-radius:9px;font-size:11px;font-weight:600;color:#fbfbfd;white-space:nowrap}
+.who2{display:flex;align-items:center;gap:8px;padding:10px 6px 2px}
+.av{width:26px;height:26px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fbfbfd;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),inset 0 -2px 4px rgba(0,0,0,.2)}
+.who2 b{font-weight:650}
+.who2 .cost{margin-left:auto;font-size:12px;color:var(--mut)}
+.task{margin:2px 6px 0;color:var(--fg2);font-size:13px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:36px}
+.st{display:flex;align-items:center;gap:6px;margin:8px 6px 4px;font-size:12.5px;font-weight:600;color:var(--fg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st .pd{width:7px;height:7px;flex:none;border-radius:50%;background:currentColor}
+.st.run .pd{background:#3fb76b;animation:ping 1.6s ease-out infinite}
+.st.need{color:var(--warn)}
+.st.ok{color:var(--ok)}
+.st.bad{color:var(--err)}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(63,183,107,.5)}100%{box-shadow:0 0 0 7px rgba(63,183,107,0)}}
+.ask{margin:8px 2px 2px;padding:10px;border-radius:14px;background:var(--warn-bg);display:flex;flex-direction:column;gap:8px;cursor:default}
+.ask p{margin:0;font-size:13px;font-weight:500;text-wrap:pretty}
+.ask .acts{display:flex;gap:6px}
+.ask input{flex:1;min-width:0;height:34px;padding:0 10px;border:0;border-radius:10px;background:var(--sf)}
+.btn{height:34px;padding:0 14px;border:0;border-radius:11px;font-size:13px;font-weight:600;white-space:nowrap;background:var(--sf2);transition:transform .15s var(--ease),filter .15s}
+.btn:hover{filter:brightness(.97)}
+html.dark .btn:hover{filter:brightness(1.12)}
+.btn.pri{background:var(--fg);color:var(--sf)}
+.btn:disabled{opacity:.45;cursor:default}
+
+/* Agent sheet: opens over the panel from the bottom. */
+#scrim{position:absolute;inset:0;z-index:7;background:rgba(10,10,20,.32);animation:fadein .2s var(--ease)}
+#sheet{position:absolute;left:8px;right:8px;bottom:8px;z-index:8;max-height:calc(100% - 70px);overflow-y:auto;padding:16px;border-radius:24px;background:var(--sf);box-shadow:var(--sh2);animation:up .28s var(--ease);scrollbar-width:thin}
+@keyframes up{from{transform:translateY(24px);opacity:0}}
+@keyframes fadein{from{opacity:0}}
+#sheet .grab{width:36px;height:5px;margin:-6px auto 12px;border-radius:3px;background:color-mix(in oklab,var(--fg) 18%,transparent)}
+#sheet .shot{transform:none}
+#sheet .hd{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+#sheet .hd b{display:block;font-size:16px;font-weight:650;line-height:1.2}
+#sheet .hd .sub{color:var(--mut);font-size:12.5px}
+#sheet .hd .grow{flex:1;min-width:0}
+.result{margin-top:12px;padding:12px 14px;border-radius:14px;background:var(--ok-bg);font-size:13.5px;text-wrap:pretty;user-select:text}
+.acts2{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.acts2 .btn{display:inline-flex;align-items:center;gap:6px}
+.acts2 .btn .i{width:15px;height:15px}
+.steps{margin:16px 0 0;padding:0;list-style:none;font-size:13px;color:var(--fg2)}
+.steps li{display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--edge)}
+.steps li i{font-style:normal;color:var(--mut);min-width:22px;text-align:right}
+.steps-h{margin:16px 0 4px;font-size:12.5px;font-weight:650;color:var(--mut)}
+
+/* Empty state: the orb says hello. */
+#empty{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 18px 8px;text-align:center}
+#empty h2{margin:0 0 6px;font-size:22px;font-weight:650;letter-spacing:-.015em;text-wrap:balance}
+#empty p{margin:0 0 20px;color:var(--fg2);max-width:34ch;text-wrap:pretty}
+.sugs{width:100%;display:flex;flex-direction:column;gap:8px}
+.sug{display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;border-radius:16px;text-align:left;transition:transform .15s var(--ease),box-shadow .2s var(--ease)}
+.sug:hover{box-shadow:var(--sh2)}
+.sug .ic{width:36px;height:36px;flex:none;display:grid;place-items:center;border-radius:12px;color:#fbfbfd;box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
+.sug span{font-size:13.5px;font-weight:500;line-height:1.35}
+
+/* Conversation. */
+#msgs{flex:1;min-height:0;overflow-y:auto;padding:4px 18px 12px;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin}
+.m{white-space:pre-wrap;word-break:break-word;text-wrap:pretty;user-select:text}
+.m.lead,.m.ag{display:flex;gap:10px;align-items:flex-start}
+.m .body{flex:1;min-width:0;padding:10px 13px;border-radius:4px 16px 16px 16px}
+.m .nm{display:block;font-size:12px;font-weight:650;color:var(--mut);margin-bottom:2px}
+.m.you{align-self:flex-end;max-width:84%;padding:10px 14px;border-radius:18px 18px 4px 18px;color:var(--on-acc);background:linear-gradient(140deg,var(--acc),color-mix(in oklab,var(--acc) 70%,#ff8fb3));box-shadow:0 8px 18px -12px color-mix(in oklab,var(--acc) 90%,transparent)}
+.m.sys{align-self:center;font-size:12.5px;color:var(--mut);text-align:center}
+.m.confirm{padding:12px 14px;border-radius:16px;background:var(--warn-bg);display:flex;flex-direction:column;gap:10px}
+.m.confirm .acts{display:flex;gap:6px}
+.typing{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:13px}
+
+/* Composer: a raised input box. */
+footer{flex:none;padding:6px 12px 12px}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 4px 8px}
+.chips:empty{display:none}
+.chip{flex:none;height:30px;display:inline-flex;align-items:center;gap:6px;padding:0 12px 0 5px;border:0;border-radius:15px;font-size:12.5px;font-weight:600;color:var(--fg2);transition:transform .15s var(--ease)}
+.chip .av{width:20px;height:20px;font-size:10px}
+.chip.plain{padding:0 12px}
+.box{border-radius:22px;padding:6px;transition:box-shadow .2s var(--ease)}
+.box:focus-within{box-shadow:0 0 0 2px color-mix(in oklab,var(--acc) 75%,transparent),var(--sh2)}
+#q{display:block;width:100%;border:0;outline:0;resize:none;background:none;padding:10px 12px 6px;height:44px;max-height:150px;font-size:14.5px;line-height:22px}
+#q::placeholder{color:var(--mut)}
+.bar2{display:flex;align-items:center;gap:6px;padding:2px 2px 2px 4px}
+.bar2 .sp{flex:1}
+#mine{height:34px;display:inline-flex;align-items:center;gap:6px;padding:0 12px 0 10px;border:0;border-radius:17px;background:var(--sf2);font-size:12.5px;font-weight:600;color:var(--fg2);transition:background-color .15s,color .15s}
+#mine .i{width:15px;height:15px}
+#mine[aria-pressed=true]{background:color-mix(in oklab,var(--acc) 35%,var(--sf));color:var(--fg)}
+#send{width:40px;height:40px;display:grid;place-items:center;border:0;border-radius:50%;color:var(--on-acc);background:linear-gradient(140deg,var(--acc),color-mix(in oklab,var(--acc) 55%,#ff7aa8));box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 8px 16px -8px color-mix(in oklab,var(--acc) 90%,transparent);transition:transform .15s var(--ease),opacity .15s}
+#send .i{width:19px;height:19px;stroke-width:2.2}
+#send:disabled{opacity:.4;cursor:default;transform:none}
+
+/* Settings. */
+#set{flex:1;min-height:0;overflow-y:auto;padding:0 12px 20px;scrollbar-width:thin}
+.shead{display:flex;align-items:center;gap:8px;padding:4px 6px 12px}
+.shead h2{margin:0;font-size:17px;font-weight:650}
+section{margin-bottom:12px;padding:16px;border-radius:20px}
+section h3{margin:0;font-size:14px;font-weight:650}
+section>p{margin:2px 0 12px;color:var(--fg2);font-size:12.5px;text-wrap:pretty}
+.fld{display:flex;flex-direction:column;gap:5px;min-width:0}
+.fld+.fld{margin-top:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:end}
+.grid3 .fld{margin-top:0}
+.keyrow{display:flex;gap:6px}
+.keyrow input{flex:1;font-family:ui-monospace,Consolas,monospace}
+.note{margin:8px 0 0;font-size:12.5px;color:var(--fg2)}
+.note.ok{color:var(--ok)}.note.bad{color:var(--err)}
+.note a{color:var(--acc-text);font-weight:600}
+.sw{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-top:1px solid var(--edge);cursor:pointer}
+.sw:first-of-type{border-top:0;padding-top:2px}
+.sw div{flex:1;min-width:0}
+.sw b{display:block;font-weight:600;font-size:13.5px}
+.sw small{display:block;color:var(--fg2);font-size:12.5px;line-height:1.4;margin-top:1px;text-wrap:pretty}
+.tg{position:relative;width:42px;height:26px;flex:none;border:0;border-radius:13px;padding:0;background:color-mix(in oklab,var(--fg) 16%,transparent);transition:background-color .2s var(--ease)}
+.tg::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fbfbfd;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform .2s var(--ease)}
+.tg[aria-checked=true]{background:linear-gradient(140deg,var(--acc),color-mix(in oklab,var(--acc) 60%,#ff7aa8))}
+.tg[aria-checked=true]::after{transform:translateX(16px)}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.ag{transform:none!important}}
+</style>
+</head>
+<body>
+<div id="grip" title="Drag to resize"></div>
+<header>
+  <div class="mark" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg></div>
+  <div class="ttl"><h1>Agents</h1><span id="count" class="num"></span></div>
+  <button class="pill sf" id="mdl" aria-haspopup="true" title="Choose models"></button>
+  <button class="rb sf" id="gear" aria-label="Agent settings" title="Agent settings"></button>
+  <button class="rb sf" id="close" aria-label="Hide panel" title="Hide panel"></button>
+</header>
+<div class="meter" id="meter" hidden>
+  <div class="bar"><i id="mbar"></i></div><span id="spend" class="num"></span>
+  <button class="lk" id="pause"></button>
+</div>
+<div id="mpop" class="pop sf" hidden></div>
+<main id="home">
+  <div class="strip-h" id="striph" hidden><h2>Your agents</h2></div>
+  <ul id="list"></ul>
+  <div id="empty"></div>
+  <div id="msgs" role="log" aria-live="polite"></div>
+</main>
+<div id="ascii" aria-hidden="true"><pre></pre></div>
+<footer id="comp">
+  <div class="chips" id="chips"></div>
+  <div class="box sf">
+    <label for="q" hidden>Message</label>
+    <textarea id="q" rows="1" placeholder="What should the agents do?"></textarea>
+    <div class="bar2">
+      <button id="mine" aria-pressed="false" title="Let one agent work in the tab you have open"><svg class="i" viewBox="0 0 24 24"><path d="M5 3l14 7-6.2 1.8L11 18z"/></svg>In my tab</button>
+      <span class="sp"></span>
+      <button id="send" aria-label="Send" title="Send (Enter)"></button>
+    </div>
+  </div>
+</footer>
+<div id="set" hidden></div>
+<div id="scrim" hidden></div>
+<div id="sheet" role="dialog" aria-modal="true" aria-label="Agent details" hidden></div>
+<script src="agents.js"></script>
+</body>
+</html>

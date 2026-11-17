@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>What's new</title>
+<script src="theme.js"></script>
+<script src="i18n.js"></script>
+<style>
+*{box-sizing:border-box;margin:0}
+html{background:var(--page);color:var(--text);font:15px/1.5 "Segoe UI",system-ui,sans-serif}
+body{max-width:760px;margin:0 auto;padding:56px 24px 80px}
+.top{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.top i{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:var(--acc);color:var(--on-acc)}
+.top i svg{width:38px;height:38px}
+h1{font-size:32px;font-weight:700;letter-spacing:-.02em}
+.lead{margin:0 0 36px 58px;color:var(--dim)}
+.ver{margin-bottom:14px;border-radius:14px;background:var(--surface);box-shadow:0 0 0 1px var(--line2)}
+summary{display:flex;align-items:baseline;gap:12px;padding:16px 20px;cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary b{font-size:18px}
+summary span{flex:1;color:var(--dim);font-size:13px}
+summary em{padding:2px 10px;border-radius:10px;background:var(--acc);color:var(--on-acc);font-size:12px;font-style:normal;font-weight:600}
+summary::after{content:"";width:8px;height:8px;margin:0 4px 0 8px;border:solid var(--dim);border-width:0 2px 2px 0;transform:translateY(-3px) rotate(45deg);transition:transform .15s}
+details[open] summary::after{transform:translateY(2px) rotate(-135deg)}
+ul{list-style:none;padding:0 20px 14px}
+li{display:flex;gap:14px;padding:12px 0;border-top:1px solid var(--line2)}
+li .ic{flex:none;width:34px;height:34px;padding:8px;border-radius:10px;background:var(--acc-soft);color:var(--acc-text)}
+li b{display:block;font-weight:600}
+li p{color:var(--dim);font-size:14px}
+kbd{padding:1px 6px;border-radius:5px;background:var(--soft);font:12px "Segoe UI",system-ui,sans-serif}
+</style>
+</head>
+<body>
+<div class="top"><i><svg viewBox="4 0 61 61"><path fill="#16181e" stroke="none" d="M12 47.5C8 43 6.5 37 7 31 8 17.5 19.5 8 34 8c13 0 22.5 7.5 25 18l1.6 10c1.8 2.6 2.4 5 2 8-.8 5.5-5 9-10.6 9H31c-7.5 0-14.5-1.5-19-5.5Z"/><path style="fill:var(--acc)" stroke="none" d="M34 28C22 29.2 13 35.5 9 44.4 15 39.1 23 34.5 34 33.2Z"/><rect style="fill:var(--acc)" stroke="none" x="28" y="20.5" width="34.5" height="13" rx="6.5"/><circle cx="36" cy="27" r="3.8" fill="none" stroke="#16181e" stroke-width="2.5"/><path d="m38.8 29.8 2.5 2.5" fill="none" stroke="#16181e" stroke-width="2.5" stroke-linecap="round"/></svg></i><h1>What's new</h1></div>
+<p class="lead" id="lead">Everything that changed in YukiWeb, newest first.</p>
+<div id="list"></div>
+<script src="icons.js"></script>
+<script>
+// [version, date, [[icon, title, text], ...]] — newest first. Add a block for every release.
+const LOG = [
+  ['0.7.5', 'November 2026', [
+    ['search', 'The address bar keeps up', 'Web apps that change pages without reloading (like YukiChat going to /chat) now show the right address, and those pages land in your history.'],
+    ['settings', 'Typing no longer stops', 'Tabs opening in the background could quietly take the keyboard away while you typed. They don\'t anymore.'],
+    ['refresh', 'Sync works again', 'Account sync and the dashboard now go through the same connection as your tabs, so they reach the server on networks that block it.'],
+  ]],
+  ['0.7.4', 'November 2026', [
+    ['sparkles', 'Agents cost less', 'Workers now run on Gemini 3.5 Flash-Lite by default (the lead keeps the smarter model), and screenshots are sent at medium detail, half the tokens each. Turn on Sharp screenshots in settings if agents misread small text. Cached input is now counted at its real, lower price.'],
+    ['chart', 'See your tokens', 'The Agents bar shows how many tokens this session used, each agent shows its own in the live view, and settings keep an all-time count.'],
+  ]],
+  ['0.7.3', 'November 2026', [
+    ['sparkles', 'A new look for Agents', 'The Agents panel was redesigned: a turning 3D ASCII ring welcomes you, agents work in cards you can swipe through (they tilt toward your mouse), and tapping one opens a live view with its steps. A bigger input box, a model menu in the header and settings in tidy sections.'],
+  ]],
+  ['0.7.2', 'November 2026', [
+    ['palette', 'Change the look from the new tab', 'The button in the bottom-right corner of the new tab now opens Appearance first: theme, accent color and wallpaper (or your own picture), like in Chrome. Dashboard widgets moved to the second tab.'],
+    ['cloud', 'More weather', 'The weather on the new tab shows today\'s high and low, feels-like and wind. Click it for humidity, gusts, pressure, UV, clouds, sunrise and sunset, the next 24 hours and 7 days.'],
+  ]],
+  ['0.7.1', 'November 2026', [
+    ['refresh', 'Updates arrive again', 'Update checks and Agents now go through YukiWeb\'s own connection (and VPN) like your tabs do, so they work where the direct connection is blocked. YukiWeb also checks for updates every 3 hours, not only at start.'],
+  ]],
+  ['0.7.0', 'November 2026', [
+    ['sparkles', 'Agents', 'Click Agents in the toolbar and tell them what to do. A lead agent splits the job and sends helpers off in parallel: each gets its own tab (or works in Windows apps like Excel and Notepad), with its own colored cursor so you can watch. Keep browsing meanwhile. They run on your own Gemini API key; set a budget and pick models in the panel.'],
+    ['lock', 'You stay in charge', 'Agents ask before paying, sending, signing in, deleting or installing (Auto mode in agent settings skips this). Click into an agent\'s tab, or move the mouse while a desktop agent works, to take over; hand it back with one button.'],
+  ]],
+  ['0.6.3', 'November 2026', [
+    ['terminal', 'No more stuck highlights', 'Closing Yuki DevTools or switching tabs now turns off the element picker and clears the blue highlight on the page.'],
+  ]],
+  ['0.6.2', 'November 2026', [
+    ['terminal', 'Dock DevTools anywhere', 'Yuki DevTools can sit on the right (now the default), left or bottom, like in Chrome. Pick a side from the ⋮ menu in the panel or press Ctrl+Shift+D. Drag the edge to resize; YukiWeb remembers both.'],
+  ]],
+  ['0.6.1', 'November 2026', [
+    ['terminal', 'Inspect opens Yuki DevTools', 'Right-click → Inspect and Ctrl+Shift+I now open the docked Yuki DevTools on that element instead of a separate Chromium window. That window is still one click away, under "Chromium DevTools" in the panel.'],
+  ]],
+  ['0.6.0', 'November 2026', [
+    ['block', 'Built-in ad blocker', 'Ads and trackers are stopped before they load, so pages are faster and follow you around less. Turn it off for a site from the ⋮ menu, or everywhere in Settings → Ad blocker.'],
+    ['terminal', 'Yuki DevTools', 'Press F12 for developer tools docked under the page: elements with live styles, a console with previews and autocomplete, network with cURL export, storage editor, Web Vitals and device emulation. Ctrl+Shift+I still opens Chromium\'s own DevTools.'],
+  ]],
+  ['0.5.7', 'November 2026', [
+    ['search', 'Yuki Search is the default', 'What you type in the address bar or on the new tab page now goes to Yuki Search, with a short Kopro answer above the results. Prefer Google? Settings → Search engine.'],
+    ['search', 'Search suggestions as you type', 'The address bar now suggests searches, not only sites from your history.'],
+    ['globe', 'No more frozen fullscreen', 'A page in a background tab could take the window fullscreen, hide the taskbar and freeze everything. Now only the tab you\'re looking at can go fullscreen, and switching tabs always brings the window back.'],
+  ]],
+  ['0.5.4', 'October 2026', [
+    ['search', 'Address bar opens what you picked', 'Picking a suggestion sometimes jumped to an unrelated open tab instead. Now Enter opens what\'s in the box, a click opens the row you clicked, and "Switch to tab" only matches tabs that are really that site.'],
+    ['music', 'Now playing fits again', 'The song name no longer spills over the buttons next to it.'],
+  ]],
+  ['0.5.3', 'October 2026', [
+    ['globe', 'No more random "couldn\'t connect"', 'Links that loaded fine sometimes showed the error page anyway, until you went back twice. Now the error page only shows when a site really can\'t be reached.'],
+  ]],
+  ['0.5.2', 'October 2026', [
+    ['layers', 'Drag and drop works again', 'Drag cards, files and pictures on any website: boards, uploads, editors and the rest.'],
+  ]],
+  ['0.5.1', 'October 2026', [
+    ['yuki', 'New tab, fixed', 'Card icons were huge and most visited sites ran off the card. Links opened in a new tab no longer get stuck on the new tab page.'],
+    ['settings', 'A shorter menu', 'Page tools sit in one row of icons, so Settings and the rest fit again.'],
+  ]],
+  ['0.5.0', 'October 2026', [
+    ['yuki', 'A new tab that knows you', 'Clock and weather in the corners, your unread chats, what you played in YukiMusic, your most visited sites and this week\'s browsing time. Pick what shows with the button in the bottom corner.'],
+    ['sparkles', 'YukiWeb Wrapped', 'Your time online, top sites, favorite hour, busiest day and what kind of browser you are, by month, year or all time. Share it as a picture. Find it in the menu or at yukiweb://wrapped.'],
+    ['find', 'Page tools', 'Find on page (Ctrl+F), reader mode, translate any page (and always translate a language), screenshots of the screen or the whole page, a QR code for the address, picture in picture for videos.'],
+    ['hl', 'Select text, do more', 'Select text on any page to copy, search, translate it on the spot, send it to YukiChat, or highlight it in four colors. Highlights and notes come back when you open the page again.'],
+    ['layers', 'Tab groups and split view', 'Right-click a tab to group it, name and color groups, collapse them. Put two tabs side by side. Mute a tab from its speaker icon.'],
+    ['search', 'Ctrl+K does everything', 'A command palette for every action, and Ctrl+Shift+A searches your open and recently closed tabs. Typing in the address bar also finds open tabs.'],
+    ['forward', 'Peek and preview links', 'Shift+click a link to open it floating over the page. Hold Alt over a link to see what it is before you click.'],
+    ['user', 'Yuki apps, built in', 'A count on your avatar for chats, mail and YUKI payments. Send a tab to your other devices. A now-playing button with play, pause and next for any music or video. Play in YukiMusic on YouTube, Spotify and others. Publish from the HTML playground straight to Yuki Pages.'],
+    ['key', 'Passwords', 'YukiWeb saves and fills passwords itself now, encrypted with your Windows account. See, copy and delete them in Settings → Passwords, and import them from Edge or Chrome.'],
+    ['tasks', 'Faster and lighter', 'New tabs open instantly (one waits ready in the background), chat opens faster, and Shift+Esc shows a task manager with what each tab uses.'],
+    ['globe', 'English, Русский, Deutsch', 'YukiWeb speaks three languages now. It follows Windows by default; change it in Settings → Appearance.'],
+  ]],
+  ['0.4.4', 'October 2026', [
+    ['yuki', 'A new logo', 'YukiWeb is now a racing helmet with a search bar for a visor. Inside the app the visor takes your accent color.'],
+    ['sparkles', 'History stays clean', 'The new tab page no longer shows up in your history and address-bar suggestions, here or on your phone.'],
+  ]],
+  ['0.4.3', 'October 2026', [
+    ['shield', 'Sites without VPN actually work', 'A site you take off the VPN now brings everything it loads with it (images, logins, payment pages), so banks and Gosuslugi stop breaking. The first visit may need one reload.'],
+    ['shield', 'Russian sites skip the VPN', 'One switch in the VPN panel sends .ru, .рф and Russian services around the VPN, while everything else stays protected.'],
+    ['palette', '18 new wallpapers', 'Eight black-and-white photos and ten in color for the new tab page, right in Settings → Appearance. Labels turn white on dark photos so you can read them.'],
+    ['settings', 'Settings in tabs', 'One section at a time instead of one long page. Settings remembers where you were.'],
+  ]],
+  ['0.4.2', 'October 2026', [
+    ['globe', '"Make default" opens the right page', 'It opened your Documents folder instead of Windows\' default apps. Fixed.'],
+    ['x', 'No more accidental tab closing', 'When tabs shrink to just their icons, the close button only shows on the tab you\'re on. Middle-click closes any tab.'],
+  ]],
+  ['0.4.1', 'October 2026', [
+    ['user', 'Sync with Yuki ID', 'Signed in? Your bookmarks, theme, wallpaper, settings and history follow you to every PC. Choose what syncs in Settings → Sync.'],
+    ['html', '@html playground', 'Type <kbd>@html</kbd> in the address bar, paste any HTML and it opens as a page instantly. No more saving files to try something out.'],
+    ['lock', 'Private tabs', 'Menu → New private tab or <kbd>Ctrl+Shift+N</kbd>. Nothing is saved: no history, no cookies, no site data once you close the last private tab. They look dark in the tab strip so you always know.'],
+    ['globe', 'Set YukiWeb as your default browser', 'Settings → Search → Make default. Links you click in other apps (Telegram, Discord, mail) then open as a tab in YukiWeb, even when it\'s already running.'],
+    ['file', 'Open .html files', 'Double-click a saved web page and it opens in YukiWeb.'],
+    ['sparkles', 'This page', 'After each update YukiWeb shows what changed. Find it again any time in the menu.'],
+  ]],
+  ['0.4.0', 'October 2026', [
+    ['dots', 'Menu', 'The ⋮ button on the right: new tab, downloads, zoom, print, bookmarks bar and settings.'],
+    ['settings', 'Settings', 'Appearance, bookmarks, extensions, search engine, sleeping tabs, site permissions, VPN sites and clearing data, all in one place.'],
+    ['palette', 'Themes', 'Light, Dark, Midnight, Sakura and Forest, any accent color you like, and your own new tab wallpaper (or none).'],
+    ['star', 'Bookmarks', 'Star a page with <kbd>Ctrl+D</kbd>, show the bookmarks bar with <kbd>Ctrl+Shift+B</kbd>, and import everything from Chrome or Edge in one click.'],
+    ['puzzle', 'Extensions', 'Open an extension on the Chrome Web Store and press "Add to YukiWeb". Ad blockers, dark mode and translators work great.'],
+    ['download', 'Downloads', 'A progress ring in the toolbar and a list of recent downloads: open, show in folder, cancel. <kbd>Ctrl+J</kbd>.'],
+    ['camera', 'Permission popups', 'When a site wants your camera, microphone, location or notifications, YukiWeb asks in its own popup and remembers your answer.'],
+    ['search', 'Smarter address bar', 'Suggestions from your history and bookmarks. Type "dash" and it finishes "dash.cloudflare.com" for you.'],
+    ['refresh', 'Your tabs come back', 'Tabs reopen after a restart or an update. Only the one you were on loads right away, the rest load when you click them. <kbd>Ctrl+Shift+T</kbd> reopens a closed tab.'],
+    ['expand', 'Real fullscreen video', 'YouTube and other players fill the whole screen; the tabs and toolbar get out of the way.'],
+    ['shield', 'VPN per site', 'Pick sites that skip the VPN (banks, Gosuslugi), or send only certain sites through it. One switch in the VPN panel for the site you\'re on.'],
+    ['user', 'Passwords and autofill', 'YukiWeb offers to save passwords and fills in forms for you.'],
+    ['chain', 'Links your way', 'Right-click → Open link in new tab. Middle-click or <kbd>Ctrl</kbd>+click opens links in the background. Drag tabs to reorder them.'],
+    ['moon', 'Lighter on weak laptops', 'Background tabs trim their memory and fall asleep after 5 minutes (you can change that). Sleeping tabs show a small moon; tabs playing music stay awake.'],
+  ]],
+  ['0.3.6', 'October 2026', [
+    ['moon', 'Performance', 'Background tabs use less memory and the tab bar redraws less often. Smoother on low-end laptops.'],
+  ]],
+  ['0.3.4', 'October 2026', [
+    ['user', 'Automatic sign-in on Yuki sites', 'Signed in to YukiWeb with Yuki ID? Yuki Chat, Music, Mail, Pages and Meet sign you in by themselves.'],
+  ]],
+  ['0.3.0', 'October 2026', [
+    ['user', 'Yuki ID', 'Sign in to YukiWeb with your Yuki ID from the avatar button.'],
+  ]],
+  ['0.2.0', 'October 2026', [
+    ['shield', 'Built-in VPN', 'Add your CompactVPN subscription and YukiWeb\'s traffic goes through it. The rest of your PC stays direct.'],
+  ]],
+  ['0.1.0', 'October 2026', [
+    ['yuki', 'Hello, YukiWeb', 'Tabs, type <kbd>@</kbd> for Yuki apps, Yuki Chat in a side panel, friendly error pages with a little F1 game, and automatic updates.'],
+  ]],
+];
+document.getElementById('list').innerHTML = LOG.map(([v, d, items], i) => `
+  <details class="ver"${i === 0 ? ' open' : ''}>
+    <summary><b>${v}</b><span>${d}</span>${i === 0 ? '<em>Latest</em>' : ''}</summary>
+    <ul>${items.map(([ic, t, p]) => `<li>${icon(ic)}<div><b>${t}</b><p>${p}</p></div></li>`).join('')}</ul>
+  </details>`).join('');
+document.getElementById('lead').textContent = `You're on YukiWeb ${LOG[0][0]}. Everything that changed, newest first.`;
+</script>
+</body>
+</html>
